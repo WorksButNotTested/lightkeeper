@@ -28,7 +28,6 @@ import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
 import ghidra.framework.plugintool.*;
 import ghidra.framework.plugintool.util.PluginStatus;
-import ghidra.util.HelpLocation;
 import ghidra.util.Msg;
 import resources.Icons;
 
