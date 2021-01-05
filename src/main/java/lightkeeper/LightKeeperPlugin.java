@@ -17,25 +17,26 @@ package lightkeeper;
 
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
-import ghidra.framework.plugintool.*;
+import ghidra.framework.plugintool.PluginInfo;
+import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 
+//@formatter:off
 @PluginInfo(
 	status = PluginStatus.STABLE,
-	packageName = LightKeeperPluginPackage.NAME,
+	packageName = "light keeper",
 	category = PluginCategoryNames.MISC,
 	shortDescription = "Plugin for visualization of DynamoRio coverage data.",
 	description = "Plugin for visualization of DynamoRio coverage data."
 )
-
+//@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 
 	LightKeeperProvider provider;
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		String pluginName = getName();
-		provider = new LightKeeperProvider(this, pluginName);
+		provider = new LightKeeperProvider(this, "Light Keeper");
 	}
 
 	@Override

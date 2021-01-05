@@ -14,6 +14,7 @@ import docking.action.ToolBarData;
 import ghidra.framework.plugintool.Plugin;
 import ghidra.util.Msg;
 import resources.Icons;
+import resources.ResourceManager;
 
 public class LightKeeperProvider extends ComponentProvider {
 
@@ -24,6 +25,7 @@ public class LightKeeperProvider extends ComponentProvider {
 		super(plugin.getTool(), owner, owner);
 		buildPanel();
 		createActions();
+		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
 
 	private void buildPanel() {
