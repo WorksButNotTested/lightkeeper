@@ -22,6 +22,9 @@ public class LightKeeperFileChooser extends GhidraFileChooser {
 		LightKeeperFileChooser lfc = new LightKeeperFileChooser (parent);
 		
 		File f = lfc.getSelectedFile();
+		if (f == null)
+			return null;
+		
 		if (!f.exists())
 			return null;
 		

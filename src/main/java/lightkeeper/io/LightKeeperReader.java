@@ -13,15 +13,10 @@ public class LightKeeperReader extends BinaryReader {
 		this.provider = provider;
 	}
 
-	public String readLine() throws IOException {
-		long index = 0;
-		StringBuilder buffer = new StringBuilder();
-		long len = provider.length();
-		while (true) {
-			if (index == len)
-				throw new IOException("Read end of input");
-				
-			char c = (char)provider.readByte(index++);
+	public String readLine() throws IOException {		
+		StringBuilder buffer = new StringBuilder();		
+		while (true) {				
+			char c = (char)this.readNextByte();
 			if (isLineEnd(c))
 				break;
 			
