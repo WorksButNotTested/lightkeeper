@@ -5,6 +5,7 @@ import java.io.File;
 import docking.ActionContext;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
+import ghidra.app.services.ConsoleService;
 import ghidra.util.task.TaskLauncher;
 import resources.Icons;
 
@@ -26,8 +27,13 @@ public class LightKeeperImportAction extends DockingAction {
 		{
 			return;
 		}
-		System.out.println("Importing File: " + f.getAbsolutePath());
+		
+		ConsoleService console = plugin.getTool().getService(ConsoleService.class);
+		console.println("Importing File: " + f.getAbsolutePath());
+		console.addMessage("Light Keeper", "Importing File: " + f.getAbsolutePath());
 		LightKeeperImportTask task = new LightKeeperImportTask(f);
 		TaskLauncher.launch(task);
+		console.println("Imported File: " + f.getAbsolutePath());
+		console.addErrorMessage("Light Keeper", "Sample Error");
 	}
 }

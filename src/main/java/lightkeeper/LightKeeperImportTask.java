@@ -2,6 +2,7 @@ package lightkeeper;
 
 import java.io.File;
 
+import ghidra.app.services.ConsoleService;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskMonitor;
