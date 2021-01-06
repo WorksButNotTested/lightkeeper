@@ -47,7 +47,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	}
 	
 	@Override
-	public void programActivated(Program program) {
-		this.program = program;
+	public void programActivated(Program activatedPlugin) {
+		this.program = activatedPlugin;
 	}
 }
