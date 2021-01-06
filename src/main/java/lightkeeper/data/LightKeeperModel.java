@@ -1,4 +1,4 @@
-package lightkeeper;
+package lightkeeper.data;
 
 import javax.swing.table.AbstractTableModel;
 

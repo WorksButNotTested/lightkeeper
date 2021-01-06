@@ -1,4 +1,4 @@
-package lightkeeper;
+package lightkeeper.ui;
 
 import java.awt.BorderLayout;
 
@@ -13,6 +13,8 @@ import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.widgets.table.GTable;
 import ghidra.util.Msg;
+import lightkeeper.LightKeeperPlugin;
+import lightkeeper.data.LightKeeperModel;
 import resources.ResourceManager;
 
 public class LightKeeperProvider extends ComponentProvider {

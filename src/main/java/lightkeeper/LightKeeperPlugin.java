@@ -21,6 +21,7 @@ import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.model.listing.Program;
+import lightkeeper.ui.LightKeeperProvider;
 
 //@formatter:off
 @PluginInfo(
