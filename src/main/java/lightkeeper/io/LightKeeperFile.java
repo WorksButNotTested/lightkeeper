@@ -12,9 +12,12 @@ import lightkeeper.ILightKeeperTaskEventListener;
 
 public class LightKeeperFile {		
 	private final String HEADER = "DRCOV VERSION: 2";
-	private final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (.*)$");
-	
+	private final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
+	private final Pattern TABLE_REGEX = Pattern.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
+
 	private String flavour;
+	private int tableVersion;
+	private int tableCount;
 	
 	private LightKeeperFile (File file, ILightKeeperTaskEventListener listener, TaskMonitor monitor) throws IOException, CancelledException {		
 		FileInputStream stream = new FileInputStream(file);
@@ -32,11 +35,31 @@ public class LightKeeperFile {
 		monitor.setMessage("Reading flavour");
 		String flavourLine = reader.readLine();
 		listener.addMessage(flavourLine);
-		Matcher matcher = FLAVOUR_REGEX.matcher(flavourLine);
-		if (!matcher.matches())
+		Matcher flavourMatcher = FLAVOUR_REGEX.matcher(flavourLine);
+		if (!flavourMatcher.matches())
 			throw new IOException(String.format("Invalid flavour: '%s'", flavourLine));
-		this.flavour = matcher.group(1);
-		listener.addMessage(String.format("Detected flavour: %s", this.flavour));			
+		this.flavour = flavourMatcher.group("flavour");
+		listener.addMessage(String.format("Detected flavour: %s", this.flavour));
+		monitor.checkCanceled();
+		
+		monitor.setMessage("Reading table");
+		String tableLine = reader.readLine();
+		listener.addMessage(tableLine);
+		Matcher tableMatcher = TABLE_REGEX.matcher(tableLine);
+		if (!tableMatcher.matches())
+			throw new IOException(String.format("Invalid table header: '%s'", tableLine));
+		
+		String version = tableMatcher.group("version");
+		if (version == null)
+			this.tableVersion = 1;
+		else
+			this.tableVersion = Integer.parseInt(version);
+		
+		listener.addMessage(String.format("Detected table version: %d", this.tableVersion));
+		
+		String count = tableMatcher.group("count");
+		this.tableCount = Integer.parseInt(count);
+		listener.addMessage(String.format("Detected table count: %d", this.tableCount));		
 		monitor.checkCanceled();
 	}
 	
