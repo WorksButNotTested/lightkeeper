@@ -23,17 +23,19 @@ public class LightKeeperImportAction extends DockingAction {
 	@Override
 	public void actionPerformed(ActionContext context) {
 		File f = LightKeeperFileChooser.selectFile(provider.getComponent());
-		if (f == null)
-		{
+		if (f == null) {
 			return;
 		}
 		
 		ConsoleService console = plugin.getTool().getService(ConsoleService.class);
-		console.println("Importing File: " + f.getAbsolutePath());
 		console.addMessage("Light Keeper", "Importing File: " + f.getAbsolutePath());
-		LightKeeperImportTask task = new LightKeeperImportTask(f);
+		LightKeeperTaskEventListener listener = new LightKeeperTaskEventListener(console);
+		LightKeeperImportTask task = new LightKeeperImportTask(f, listener);
 		TaskLauncher.launch(task);
-		console.println("Imported File: " + f.getAbsolutePath());
-		console.addErrorMessage("Light Keeper", "Sample Error");
+		console.addErrorMessage("Light Keeper", "Completed");
 	}
+	
+	
+
+	
 }

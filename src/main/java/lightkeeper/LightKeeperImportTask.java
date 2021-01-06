@@ -2,17 +2,18 @@ package lightkeeper;
 
 import java.io.File;
 
-import ghidra.app.services.ConsoleService;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskMonitor;
 
 public class LightKeeperImportTask extends Task {
 	protected File file;
+	protected ILightKeeperTaskEventListener listener;
 	
-	public LightKeeperImportTask(File file) {
+	public LightKeeperImportTask(File file, ILightKeeperTaskEventListener listener) {
 		super("Import Coverage Data", true, true, true);
 		this.file = file;
+		this.listener = listener;
 	}
 
 	@Override
@@ -24,6 +25,7 @@ public class LightKeeperImportTask extends Task {
 			monitor.setProgress(0);
 			for (int i = 0; i < 15; i++)
 			{
+				listener.addMessage("Processing: " + i + " / 15");
 				monitor.checkCanceled();
 				Thread.sleep(200);
 				monitor.setProgress(i + 1);
