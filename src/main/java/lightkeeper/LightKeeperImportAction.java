@@ -5,6 +5,7 @@ import java.io.File;
 import docking.ActionContext;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
+import ghidra.util.task.TaskLauncher;
 import resources.Icons;
 
 public class LightKeeperImportAction extends DockingAction {
@@ -20,19 +21,13 @@ public class LightKeeperImportAction extends DockingAction {
 
 	@Override
 	public void actionPerformed(ActionContext context) {
-		boolean commit = false;
-		int transaction = plugin.program.startTransaction("Create Plate Comments");
-		try {
-			File f = LightKeeperFileChooser.selectFile(provider.getComponent());
-			if (f == null)
-			{
-				return;
-			}
-			System.out.println("Importing File: " + f.getAbsolutePath());
-			commit = true;
+		File f = LightKeeperFileChooser.selectFile(provider.getComponent());
+		if (f == null)
+		{
+			return;
 		}
-		finally {
-			plugin.program.endTransaction(transaction, commit);	
-		}
+		System.out.println("Importing File: " + f.getAbsolutePath());
+		LightKeeperImportTask task = new LightKeeperImportTask(f);
+		TaskLauncher.launch(task);
 	}
 }
