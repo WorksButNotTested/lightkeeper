@@ -183,9 +183,10 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 			
 			Pair<Integer, Integer> codeBlockInfo = this.processCodeBlocks(listener, monitor, api, function, blocks);
 			Pair<Integer, Integer> instructionInfo = this.processInstructions(listener, monitor, api, function, blocks);
+			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
 			
 			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), 
-					codeBlockInfo.first, codeBlockInfo.second, instructionInfo.first, instructionInfo.second, 0);
+					codeBlockInfo.first, codeBlockInfo.second, instructionInfo.first, instructionInfo.second, functionSize);
 			this.rows.add(row);
 		}
 	}
