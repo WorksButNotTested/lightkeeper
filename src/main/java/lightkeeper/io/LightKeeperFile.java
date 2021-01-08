@@ -134,6 +134,9 @@ public class LightKeeperFile {
 		
 		if (this.provider.getLength() != this.provider.getPosition())
 			throw new IOException(String.format("File has: %d unexpected trailing bytes at position: %d", this.provider.getLength() - this.provider.getPosition(), this.provider.getPosition()));
+		
+		this.monitor.setMessage("File parsing complete");
+		this.listener.addMessage("File parsing complete");
 	}
 	
 	public static LightKeeperFile read(File file, ILightKeeperTaskEventListener listener, TaskMonitor monitor) throws IOException, CancelledException {

@@ -29,7 +29,6 @@ public class LightKeeperImportAction extends DockingAction {
 			return;
 		}
 		
-		
 		ConsoleService console = plugin.getTool().getService(ConsoleService.class);
 		console.addMessage("Light Keeper", String.format("Importing File: %s", f.getAbsolutePath()));
 		LightKeeperTaskEventListener listener = new LightKeeperTaskEventListener(console);

@@ -34,18 +34,9 @@ public class LightKeeperImportTask extends Task {
 			monitor.setMaximum(15);
 			monitor.setProgress(0);
 			LightKeeperFile dataFile = LightKeeperFile.read(this.file, this.listener, monitor);
-			for (int i = 0; i < 15; i++)
-			{
-				listener.addMessage(String.format("Processing: %d / 15", i));
-				monitor.checkCanceled();
-				Thread.sleep(200);
-				monitor.setProgress(i + 1);
-			}
 			listener.addMessage(String.format("Imported: %s",this.file.getAbsolutePath()));
 			
 			this.model.update(this.listener, monitor, this.plugin.getApi(), dataFile);	
-		} catch (InterruptedException e) { 
-			this.listener.addException(e);
 		} catch (IOException e) {
 			this.listener.addException(e);
 		}
