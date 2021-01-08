@@ -34,6 +34,10 @@ public class LightKeeperByteProvider implements ByteProvider {
 	public long getPosition() {
 		return this.currentIndex;
 	}
+	
+	public long getLength() {
+		return this.length;
+	}
 
 	@Override
 	public InputStream getInputStream(long index) throws IOException {

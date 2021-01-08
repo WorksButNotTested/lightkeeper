@@ -1,4 +1,4 @@
-package lightkeeper.io;
+package lightkeeper.io.module;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.ILightKeeperTaskEventListener;
+import lightkeeper.io.LightKeeperReader;
 
 public class LightKeeperModuleReader {
 	protected final String COLUMN_2_HDR_WIN = "Columns: id, base, end, entry, checksum, timestamp, path";
@@ -105,8 +106,7 @@ public class LightKeeperModuleReader {
 		LightKeeperModuleEntry module = new LightKeeperModuleEntry(id, start, end, entry, checksum, timeStamp, pathString);
 		listener.addMessage(String.format("Read Module: %s", module));
 		this.monitor.checkCanceled();
-		return module;
-		
+		return module;		
 	}
 	
 	private <T> T parseNumber(String numberString, Function<String, T> convert, String failMessage) throws IOException {

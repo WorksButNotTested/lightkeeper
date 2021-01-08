@@ -1,4 +1,4 @@
-package lightkeeper.io;
+package lightkeeper.io.module;
 
 public class LightKeeperModuleEntry {
 	protected int id;
