@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.swing.table.AbstractTableModel;
 
+import generic.stl.Pair;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressSetView;
@@ -106,10 +107,6 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 		listener.addMessage("Processing complete");
 		monitor.checkCanceled();
 		
-		// TODO: Remove me
-		LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow("TEST", 0xdeadface, 10, 5, 200, 10, 123);
-		rows.add(row);
-		
 		fireTableDataChanged();
 	}
 	
@@ -172,9 +169,7 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 	}
 	
 	public void processFunctions(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, HashMap<Function, Set<LightKeeperBlockEntry>> functions) throws CancelledException {
-		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
-		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
-		Listing listing = api.getCurrentProgram().getListing();
+		
 		Iterator<Function> functionIterator = functions.keySet().iterator();
 		int i = 0;
 		while (functionIterator.hasNext()) {
@@ -183,57 +178,73 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 			Function function = functionIterator.next();
 			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
 			listener.addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
+			AddressSetView body = function.getBody();
 			Set<LightKeeperBlockEntry> blocks = functions.get(function);
 			
-		
-			AddressSetView body = function.getBody();
-			CodeBlockIterator codeBlockIterator = bbm.getCodeBlocksContaining(body, monitor);
-			int codeBlocks = 0;
-			int hitCodeBlocks = 0;
-			while (codeBlockIterator.hasNext()) {
-				monitor.checkCanceled();
-				codeBlocks++;
-				
-				monitor.setMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
-				listener.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
-				
-				CodeBlock cb = codeBlockIterator.next();
-				long start = cb.getMinAddress().subtract(baseAddress);
-				long end = cb.getMaxAddress().subtract(baseAddress);
-				
-				Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();				
-				while (blockIterator.hasNext()) {			
-					monitor.checkCanceled();
-					
-					LightKeeperBlockEntry block = blockIterator.next();
-					if (block.contains(start, end))
-						hitCodeBlocks++;
-				}
-			}
+			Pair<Integer, Integer> codeBlockInfo = this.processCodeBlocks(listener, monitor, api, function, blocks);
+			Pair<Integer, Integer> instructionInfo = this.processInstructions(listener, monitor, api, function, blocks);
 			
-			InstructionIterator instructionIterator = listing.getInstructions(body, true);
-			int instructions = 0;
-			int hitInstructions = 0;
-			while (instructionIterator.hasNext()) {
-				monitor.checkCanceled();
-				instructions++;
-				monitor.setMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
-				listener.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
-				
-				Instruction instruction = instructionIterator.next();
-				Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();
-				while (blockIterator.hasNext()) {
-					monitor.checkCanceled();
-					LightKeeperBlockEntry block = blockIterator.next();
-					long start = instruction.getMinAddress().subtract(baseAddress);
-					long end = instruction.getMaxAddress().subtract(baseAddress);
-					if (block.contains(start, end))
-						hitInstructions++;
-				}
-			}
-			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), codeBlocks, hitCodeBlocks, instructions, hitInstructions, 0);
+			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), 
+					codeBlockInfo.first, codeBlockInfo.second, instructionInfo.first, instructionInfo.second, 0);
 			this.rows.add(row);
 		}
+	}
+	
+	public Pair<Integer, Integer> processCodeBlocks(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
+		AddressSetView body = function.getBody();
+		CodeBlockIterator codeBlockIterator = bbm.getCodeBlocksContaining(body, monitor);
+		int codeBlocks = 0;
+		int hitCodeBlocks = 0;
+		while (codeBlockIterator.hasNext()) {
+			monitor.checkCanceled();
+			codeBlocks++;
+			
+			monitor.setMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
+			listener.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
+			
+			CodeBlock cb = codeBlockIterator.next();
+			long start = cb.getMinAddress().subtract(baseAddress);
+			long end = cb.getMaxAddress().subtract(baseAddress);
+			
+			Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();				
+			while (blockIterator.hasNext()) {			
+				monitor.checkCanceled();
+				
+				LightKeeperBlockEntry block = blockIterator.next();
+				if (block.contains(start, end))
+					hitCodeBlocks++;
+			}
+		}
+		return new Pair<Integer, Integer>(Integer.valueOf(codeBlocks), Integer.valueOf(hitCodeBlocks));
+	}
+	
+	public Pair<Integer, Integer> processInstructions(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+		Listing listing = api.getCurrentProgram().getListing();
+		AddressSetView body = function.getBody();
+		InstructionIterator instructionIterator = listing.getInstructions(body, true);
+		int instructions = 0;
+		int hitInstructions = 0;
+		while (instructionIterator.hasNext()) {
+			monitor.checkCanceled();
+			instructions++;
+			monitor.setMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
+			listener.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
+			
+			Instruction instruction = instructionIterator.next();
+			Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();
+			while (blockIterator.hasNext()) {
+				monitor.checkCanceled();
+				LightKeeperBlockEntry block = blockIterator.next();
+				long start = instruction.getMinAddress().subtract(baseAddress);
+				long end = instruction.getMaxAddress().subtract(baseAddress);
+				if (block.contains(start, end))
+					hitInstructions++;
+			}
+		}
+		return new Pair<Integer, Integer>(Integer.valueOf(instructions), Integer.valueOf(hitInstructions));
 	}
 	
 	public void processUnassigned(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Set<LightKeeperBlockEntry> blocks) throws CancelledException {

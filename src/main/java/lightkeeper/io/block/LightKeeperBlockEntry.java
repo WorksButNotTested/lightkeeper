@@ -40,7 +40,7 @@ public class LightKeeperBlockEntry {
 		if (rangeEnd > this.getEnd())
 			return false;
 		
-		return false;
+		return true;
 	}
 	
 	@Override
