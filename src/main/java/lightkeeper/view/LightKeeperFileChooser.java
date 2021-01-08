@@ -1,4 +1,4 @@
-package lightkeeper.ui;
+package lightkeeper.view;
 
 import java.awt.Component;
 import java.io.File;

@@ -1,4 +1,4 @@
-package lightkeeper.ui;
+package lightkeeper.view;
 
 import java.awt.BorderLayout;
 
@@ -6,6 +6,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 
 import docking.ActionContext;
 import docking.ComponentProvider;
@@ -14,13 +16,13 @@ import docking.action.MenuData;
 import docking.widgets.table.GTable;
 import ghidra.util.Msg;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.data.LightKeeperModel;
+import lightkeeper.model.LightKeeperCoverageModel;
 import resources.ResourceManager;
 
-public class LightKeeperProvider extends ComponentProvider {
+public class LightKeeperProvider extends ComponentProvider implements TableModelListener {
 
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperModel model;
+	protected LightKeeperCoverageModel model;
 	protected GTable table;
 	protected JPanel panel;
 
@@ -34,7 +36,8 @@ public class LightKeeperProvider extends ComponentProvider {
 
 	private void buildPanel() {
 		panel = new JPanel(new BorderLayout());
-		model = new LightKeeperModel();
+		model = new LightKeeperCoverageModel();
+		model.addTableModelListener(this);
 		table = new GTable();
 		table.setModel(model);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -62,5 +65,14 @@ public class LightKeeperProvider extends ComponentProvider {
 	@Override
 	public JComponent getComponent() {
 		return panel;
+	}
+
+	@Override
+	public void tableChanged(TableModelEvent arg0) {
+		this.table.repaint();		
+	}
+	
+	public LightKeeperCoverageModel getModel() {
+		return this.model;
 	}
 }

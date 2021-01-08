@@ -1,4 +1,4 @@
-package lightkeeper.ui;
+package lightkeeper.view;
 
 import ghidra.app.services.ConsoleService;
 import ghidra.util.Swing;

@@ -20,8 +20,9 @@ import ghidra.app.plugin.ProgramPlugin;
 import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
+import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
-import lightkeeper.ui.LightKeeperProvider;
+import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
 @PluginInfo(
@@ -36,6 +37,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 
 	protected LightKeeperProvider provider;
 	protected Program program;
+	protected FlatProgramAPI api;
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
@@ -48,7 +50,12 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	}
 	
 	@Override
-	public void programActivated(Program activatedPlugin) {
-		this.program = activatedPlugin;
+	public void programActivated(Program activatedProgram) {
+		this.program = activatedProgram;
+		this.api = new FlatProgramAPI(activatedProgram);
+	}
+	
+	public FlatProgramAPI getApi() {
+		return this.api;
 	}
 }

@@ -1,4 +1,4 @@
-package lightkeeper.ui;
+package lightkeeper.view;
 
 import java.io.File;
 
@@ -8,7 +8,7 @@ import docking.action.ToolBarData;
 import ghidra.app.services.ConsoleService;
 import ghidra.util.task.TaskLauncher;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.data.LightKeeperImportTask;
+import lightkeeper.controller.LightKeeperImportTask;
 import resources.Icons;
 
 public class LightKeeperImportAction extends DockingAction {
@@ -29,10 +29,11 @@ public class LightKeeperImportAction extends DockingAction {
 			return;
 		}
 		
+		
 		ConsoleService console = plugin.getTool().getService(ConsoleService.class);
 		console.addMessage("Light Keeper", String.format("Importing File: %s", f.getAbsolutePath()));
 		LightKeeperTaskEventListener listener = new LightKeeperTaskEventListener(console);
-		LightKeeperImportTask task = new LightKeeperImportTask(f, listener);
+		LightKeeperImportTask task = new LightKeeperImportTask(this.plugin, this.provider.getModel(), f, listener);
 		TaskLauncher.launch(task);
 		console.addErrorMessage("Light Keeper", "Completed");
 	}
