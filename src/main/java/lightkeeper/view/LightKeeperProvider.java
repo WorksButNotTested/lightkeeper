@@ -1,6 +1,7 @@
 package lightkeeper.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -14,6 +15,8 @@ import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.widgets.table.GTable;
+import ghidra.app.plugin.core.colorizer.ColorizingService;
+import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.model.LightKeeperCoverageModel;
@@ -70,6 +73,24 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
 		this.table.repaint();		
+		this.repaintColours();
+	}
+	
+	protected void repaintColours() {
+		ColorizingService colorService = plugin.getTool().getService(ColorizingService.class);
+		if (colorService == null)
+			return;	
+		
+		boolean completed = false;
+		Program program = plugin.getApi().getCurrentProgram();
+		int transaction = program.startTransaction("Light Keeper");
+		try {
+			colorService.clearAllBackgroundColors();
+			this.model.getHits().forEach(r -> colorService.setBackgroundColor(r.getMinAddress(), r.getMaxAddress(), Color.RED));
+			completed = true;
+		} finally {
+			program.endTransaction(transaction, completed);
+		}	
 	}
 	
 	public LightKeeperCoverageModel getModel() {

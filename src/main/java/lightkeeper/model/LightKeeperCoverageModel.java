@@ -13,6 +13,7 @@ import javax.swing.table.AbstractTableModel;
 import generic.stl.Pair;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.block.BasicBlockModel;
 import ghidra.program.model.block.CodeBlock;
@@ -93,7 +94,8 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 		"Function Size"
     };
 	
-	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();	
+	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();
+	protected Set<AddressRange> hits = new HashSet<AddressRange>();
 	
 	public void update(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException
 	{
@@ -214,8 +216,10 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 				monitor.checkCanceled();
 				
 				LightKeeperBlockEntry block = blockIterator.next();
-				if (block.contains(start, end))
+				if (block.contains(start, end)) {
 					hitCodeBlocks++;
+					cb.getAddressRanges().forEach(r -> this.hits.add(r));
+				}
 			}
 		}
 		return new Pair<Integer, Integer>(Integer.valueOf(codeBlocks), Integer.valueOf(hitCodeBlocks));
@@ -298,5 +302,9 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 			default:
 				throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}
+	}
+	
+	public Set<AddressRange> getHits() {
+		return this.hits;
 	}
 }
