@@ -16,4 +16,20 @@ public class LightKeeperBlockEntry {
 		String str = String.format("start: %x, size: %d, module: %d", this.start, this.size, this.module);
 		return str;
 	}
+	
+	public long getStart() {
+		return this.start;
+	}
+	
+	public int getSize() {
+		return this.size;
+	}
+	
+	public long getEnd() {
+		return this.start + this.size;
+	}
+	
+	public int getModule() {
+		return this.module;
+	}
 }

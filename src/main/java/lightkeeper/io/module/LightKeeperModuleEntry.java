@@ -24,4 +24,24 @@ public class LightKeeperModuleEntry {
 		String str = String.format("id: %d, start: %x, end: %x, entry: %x, checksum: %x, timestamp: %x, path: %s", id, start, end, entry, checksum, timeStamp, path);
 		return str;
 	}
+	
+	public int getId() {
+		return this.id;
+	}
+	
+	public long getStart() {
+		return this.start;
+	}
+	
+	public long getEnd() {
+		return this.end;
+	}
+	
+	public long getSize() {
+		return this.end - this.start;
+	}
+	
+	public String getPath() {
+		return this.path;
+	}
 }

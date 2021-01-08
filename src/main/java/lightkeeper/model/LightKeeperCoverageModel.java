@@ -1,15 +1,20 @@
 package lightkeeper.model;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.table.AbstractTableModel;
 
 import ghidra.program.flatapi.FlatProgramAPI;
+import ghidra.program.model.address.Address;
+import ghidra.program.model.listing.Function;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.ILightKeeperTaskEventListener;
 import lightkeeper.io.LightKeeperFile;
+import lightkeeper.io.block.LightKeeperBlockEntry;
+import lightkeeper.io.module.LightKeeperModuleEntry;
 
 public class LightKeeperCoverageModel extends AbstractTableModel {
 	
@@ -76,15 +81,64 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 	
 	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();	
 	
-	public void update(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException
+	public void update(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException
 	{
 		monitor.checkCanceled();
-		File f = api.getProgramFile();
-		listener.addMessage(String.format("Searching for basic blocks for: %s", f.getPath()));
+		LightKeeperModuleEntry module = this.getModule(listener, monitor, api, file);
+		monitor.checkCanceled();
+		
+		this.processEntries(listener, monitor, api, file, module);
 		
 		LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow("TEST", 0xdeadface, 10, 5, 200, 10, 123);
 		rows.add(row);
 		fireTableDataChanged();
+	}
+	
+	public LightKeeperModuleEntry getModule (ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException {
+		File programFile = api.getProgramFile();
+		String programFileName = programFile.getName();
+		listener.addMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
+		monitor.setMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
+		
+		ArrayList<LightKeeperModuleEntry> modules = file.getModules();
+		for (int i = 0; i < modules.size(); i++)
+		{
+			monitor.checkCanceled();
+			LightKeeperModuleEntry module = modules.get(i);
+			File f = new File(module.getPath());
+			String fileName = f.getName();
+			if (fileName.equals(programFileName))
+			{
+				return module;
+			}
+		}
+		throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
+	}
+	
+	public void processEntries(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file, LightKeeperModuleEntry module) throws CancelledException, IOException {
+		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+		listener.addMessage(String.format("Base address: %x", baseAddress.getOffset()));
+		
+		ArrayList<LightKeeperBlockEntry> blocks = file.getBlocks();
+		for (int i = 0; i < blocks.size(); i++)
+		{
+			monitor.checkCanceled();
+			monitor.setMessage(String.format("Processing block %d / %d", i, blocks.size()));
+			LightKeeperBlockEntry block = blocks.get(i);
+			if (block.getModule() != module.getId())
+				continue;
+			
+			if (block.getEnd() > module.getSize())
+				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), module.getSize()));
+			
+			Address addr = baseAddress.add(block.getStart());
+			Function function = api.getFunctionContaining(addr);
+			if (function == null) {
+				listener.addMessage(String.format("No function found at: %x", addr.getOffset()));
+			} else {
+				listener.addMessage(String.format("Found function: '%s' at: %x", function.getName(), addr.getOffset()));
+			}
+		}
 	}
 
 	@Override

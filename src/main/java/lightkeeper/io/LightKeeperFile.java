@@ -141,5 +141,13 @@ public class LightKeeperFile {
 	
 	public static LightKeeperFile read(File file, ILightKeeperTaskEventListener listener, TaskMonitor monitor) throws IOException, CancelledException {
 		return new LightKeeperFile(file, listener, monitor);
-	}	
+	}
+	
+	public ArrayList<LightKeeperModuleEntry> getModules() {
+		return this.modules;
+	}
+	
+	public ArrayList<LightKeeperBlockEntry> getBlocks() {
+		return this.blocks;
+	}
 }
