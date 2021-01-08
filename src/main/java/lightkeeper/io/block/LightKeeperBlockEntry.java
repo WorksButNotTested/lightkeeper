@@ -32,4 +32,42 @@ public class LightKeeperBlockEntry {
 	public int getModule() {
 		return this.module;
 	}
+	
+	public boolean contains(long rangeStart, long rangeEnd) {
+		if (rangeStart < this.getStart())
+			return false;
+		
+		if (rangeEnd > this.getEnd())
+			return false;
+		
+		return false;
+	}
+	
+	@Override
+    public boolean equals(Object o) {    
+        if (o == this) { 
+            return true; 
+        } 
+  
+        if (!(o instanceof LightKeeperBlockEntry)) { 
+            return false; 
+        } 
+            
+        LightKeeperBlockEntry e = (LightKeeperBlockEntry) o; 
+        if (e.getModule() != this.getModule())
+        	return false;
+        
+        if (e.getStart() != this.getStart())
+    		return false;
+        
+        return true; 
+    } 
+	
+	@Override
+    public int hashCode() {
+		int hash = 17;
+		hash = hash * 23 + Integer.valueOf(this.module).hashCode();
+		hash = hash * 23 + Long.valueOf(this.start).hashCode();
+		return hash;
+	}
 }
