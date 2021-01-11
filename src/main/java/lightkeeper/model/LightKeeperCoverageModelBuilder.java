@@ -12,6 +12,7 @@ import java.util.Set;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressRange;
+import ghidra.program.model.address.AddressRangeImpl;
 import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.block.BasicBlockModel;
 import ghidra.program.model.block.CodeBlock;
@@ -185,10 +186,8 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 				monitor.checkCanceled();
 				
 				LightKeeperBlockEntry block = blockIterator.next();
-				if (block.contains(start, end)) {
-					hitCodeBlocks++;
-					cb.getAddressRanges().forEach(r -> this.hits.add(r));
-				}
+				if (block.contains(start, end))
+					hitCodeBlocks++;								
 			}
 		}
 		return new LightKeeperFraction(hitCodeBlocks, codeBlocks);
@@ -214,8 +213,13 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 				LightKeeperBlockEntry block = blockIterator.next();
 				long start = instruction.getMinAddress().subtract(baseAddress);
 				long end = instruction.getMaxAddress().subtract(baseAddress);
-				if (block.contains(start, end))
-					hitInstructions++;
+				if (block.contains(start, end)) {
+					hitInstructions++;					
+					Address instructionStart = instruction.getAddress();
+					Address instructionEnd = instructionStart.add(instruction.getLength());
+					AddressRange range = new AddressRangeImpl(instructionStart, instructionEnd);
+					this.hits.add(range);					
+				}
 			}
 		}
 		return new LightKeeperFraction(hitInstructions, instructions);
