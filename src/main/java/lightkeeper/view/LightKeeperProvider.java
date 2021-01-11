@@ -15,6 +15,7 @@ import docking.ComponentProvider;
 import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.widgets.table.GTable;
+import docking.widgets.table.TableSortStateEditor;
 import ghidra.app.plugin.core.colorizer.ColorizingService;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
@@ -40,10 +41,14 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	private void buildPanel() {
 		panel = new JPanel(new BorderLayout());
 		model = new LightKeeperCoverageModel();
+		TableSortStateEditor sortStateEditor = new TableSortStateEditor();
+		sortStateEditor.addSortedColumn(0);
+		model.setTableSortState(sortStateEditor.createTableSortState());
 		model.addTableModelListener(this);
 		table = new GTable();
 		table.setModel(model);
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);		
+		table.setUserSortingEnabled(true);		
 		panel.add(new JScrollPane(table));
 		setVisible(true);
 	}

@@ -3,13 +3,21 @@ package lightkeeper.model;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.table.AbstractTableModel;
 
+import docking.widgets.table.ColumnSortState;
+import docking.widgets.table.ColumnSortState.SortDirection;
+import docking.widgets.table.SortListener;
+import docking.widgets.table.SortedTableModel;
+import docking.widgets.table.TableSortState;
 import generic.stl.Pair;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
@@ -29,62 +37,7 @@ import lightkeeper.io.LightKeeperFile;
 import lightkeeper.io.block.LightKeeperBlockEntry;
 import lightkeeper.io.module.LightKeeperModuleEntry;
 
-public class LightKeeperCoverageModel extends AbstractTableModel {
-	
-	public static class LightKeeperCoverageModelRow {
-		protected String name;
-		protected long address;
-		protected long blocks;
-		protected long blocksHit;
-		protected long instructions;
-		protected long instructionsHit;
-		protected long functionSize;
-		
-		public LightKeeperCoverageModelRow (String name, long address, long blocks, long blocksHit, long instructions, long instructionsHit, long functionSize) {
-			this.name = name;
-			this.address = address;
-			this.blocks = blocks;
-			this.blocksHit = blocksHit;
-			this.instructions = instructions;
-			this.instructionsHit = instructionsHit;
-			this.functionSize = functionSize;
-		}
-		
-		public float getCoverage() {
-			if (instructions == 0)
-				return 0;
-			return (float)(this.instructionsHit * 100) / this.instructions;
-		}
-		
-		public long getAddress() {
-			return this.address;
-		}
-		
-		public String getName() {
-			return this.name;
-		}
-		
-		public long getBlocks() {
-			return this.blocks;
-		}
-		
-		public long getBlocksHit() {
-			return this.blocksHit;
-		}
-		
-		public long getInstructions() {
-			return this.instructions;
-		}
-		
-		public long getInstructionsHit() {
-			return this.instructionsHit;
-		}
-		
-		public long getFunctionSize() {
-			return this.functionSize;
-		}
-	}
-	
+public class LightKeeperCoverageModel extends AbstractTableModel  implements SortedTableModel {	
 	private String[] columnNames = {
 		"Coverage %",
 		"Function Name",
@@ -96,6 +49,8 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 	
 	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
+	protected TableSortState sortState = TableSortState.createUnsortedSortState();
+	protected ArrayList<SortListener> sortListeners = new ArrayList<SortListener>();
 	
 	public void update(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException
 	{
@@ -294,9 +249,9 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 			case 2:
 				return String.format("%x", row.getAddress());
 			case 3:
-				return String.format("%d / %d", row.getBlocksHit(), row.getBlocks());
+				return row.getBlocks();
 			case 4:
-				return String.format("%d / %d", row.getInstructionsHit(), row.getInstructions());
+				return row.getInstructions();
 			case 5:
 				return row.getFunctionSize();
 			default:
@@ -306,5 +261,47 @@ public class LightKeeperCoverageModel extends AbstractTableModel {
 	
 	public Set<AddressRange> getHits() {
 		return this.hits;
+	}
+
+	@Override
+	public boolean isSortable(int columnIndex) {		
+		return true;
+	}
+
+	@Override
+	public int getPrimarySortColumnIndex() {	
+		return 0;
+	}
+
+	@Override
+	public void setTableSortState(TableSortState tableSortState) {
+		List<ColumnSortState> columnSortStates = tableSortState.getAllSortStates();
+		Comparator<LightKeeperCoverageModelRow> comparator = null;
+		for (int i = 0; i < columnSortStates.size(); i++)
+		{
+			ColumnSortState columnSortState = columnSortStates.get(i);
+			Comparator<LightKeeperCoverageModelRow> thisComparator = LightKeeperCoverageModelRow.getComparer(columnSortState.getColumnModelIndex());
+			if (columnSortState.getSortDirection() == SortDirection.DESCENDING)
+				thisComparator = thisComparator.reversed();
+			
+			if (i == 0)
+				comparator = thisComparator;
+			else
+				comparator = comparator.thenComparing(thisComparator);
+				
+		}
+	
+		Collections.sort(this.rows, comparator);
+		this.sortListeners.forEach(l -> l.modelSorted(tableSortState));		
+	}
+
+	@Override
+	public TableSortState getTableSortState() { 
+		return this.sortState;
+	}
+
+	@Override
+	public void addSortListener(SortListener l) {
+		this.sortListeners.add(l);		
 	}
 }
