@@ -12,7 +12,7 @@ public class LightKeeperRefreshTask extends Task {
 	protected LightKeeperCoverageModel model;			
 
 	public LightKeeperRefreshTask(LightKeeperController controller, LightKeeperCoverageModel model) {
-		super("Import Coverage Data", true, true, true);
+		super("Refresh Coverage Data", true, true, true);
 		this.controller = controller;
 		this.model = model;		
 	}

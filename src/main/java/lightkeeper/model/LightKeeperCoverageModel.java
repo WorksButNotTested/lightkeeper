@@ -73,7 +73,13 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		builder.build(monitor, this.file);
 		monitor.checkCanceled();		
 		fireTableDataChanged();
-	}	
+	}
+	
+	public void clear() {
+		this.file = null;
+		this.builder = new LightKeeperCoverageModelBuilder(this.plugin);
+		fireTableDataChanged();
+	}
 	
 	@Override
 	public boolean isSortable(int columnIndex) {

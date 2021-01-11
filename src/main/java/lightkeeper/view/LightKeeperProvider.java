@@ -24,6 +24,7 @@ import docking.widgets.table.TableSortStateEditor;
 import ghidra.util.Msg;
 import ghidra.util.task.TaskLauncher;
 import lightkeeper.LightKeeperPlugin;
+import lightkeeper.controller.LightKeeperClearTask;
 import lightkeeper.controller.LightKeeperController;
 import lightkeeper.controller.LightKeeperImportTask;
 import lightkeeper.controller.LightKeeperRefreshTask;
@@ -86,7 +87,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			}
 		};
 		aboutAction.setMenuBarData(
-				new MenuData(new String[] {"About"},null,"Help"));
+				new MenuData(new String[] {"About"},Icons.HELP_ICON,"Help"));
 		
 		dockingTool.addLocalAction(this, aboutAction);
 		
@@ -137,6 +138,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		refreshAction.setMenuBarData(
 				new MenuData(new String[] {"Refresh"}, Icons.REFRESH_ICON, "Action"));
 		dockingTool.addLocalAction(this, refreshAction);
+		
+		DockingAction clearAction = new DockingAction("Clear", getName()) {
+			@Override
+			public void actionPerformed(ActionContext context) {						
+				LightKeeperClearTask task = controller.createClearTask();
+				TaskLauncher.launch(task);		
+			}
+		};
+		clearAction.setToolBarData(new ToolBarData(Icons.DELETE_ICON, null));		
+		clearAction.setEnabled(true);
+		clearAction.setMenuBarData(
+				new MenuData(new String[] {"Clear"}, Icons.DELETE_ICON, "Action"));
+		dockingTool.addLocalAction(this, clearAction);
 	}
 
 	@Override
