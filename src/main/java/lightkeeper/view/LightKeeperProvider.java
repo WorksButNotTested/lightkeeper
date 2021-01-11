@@ -22,12 +22,12 @@ import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.table.GTable;
 import docking.widgets.table.TableSortStateEditor;
 import ghidra.util.Msg;
+import ghidra.util.exception.CancelledException;
+import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
+import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.LightKeeperClearTask;
 import lightkeeper.controller.LightKeeperController;
-import lightkeeper.controller.LightKeeperImportTask;
-import lightkeeper.controller.LightKeeperRefreshTask;
 import lightkeeper.model.LightKeeperCoverageModel;
 import resources.Icons;
 import resources.ResourceManager;
@@ -114,7 +114,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				
 				lastFile = file;
 													
-				LightKeeperImportTask task = controller.createImportTask(file);
+				Task task = new Task("Import Coverage Data", true, true, true){
+					@Override
+					public void run(TaskMonitor monitor) throws CancelledException {
+						controller.importCoverage(monitor, file);
+					}
+				};
 				TaskLauncher.launch(task);		
 			}
 		};
@@ -129,7 +134,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			public void actionPerformed(ActionContext context) {		
 				if (lastFile == null)
 					return;
-				LightKeeperRefreshTask task = controller.createRefreshTask();
+				Task task = new Task("Refresh Coverage Data", true, true, true){
+					@Override
+					public void run(TaskMonitor monitor) throws CancelledException {
+						controller.refreshCoverage(monitor);
+					}
+				};
 				TaskLauncher.launch(task);		
 			}
 		};
@@ -141,9 +151,14 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		
 		DockingAction clearAction = new DockingAction("Clear", getName()) {
 			@Override
-			public void actionPerformed(ActionContext context) {						
-				LightKeeperClearTask task = controller.createClearTask();
-				TaskLauncher.launch(task);		
+			public void actionPerformed(ActionContext context) {
+				Task task = new Task("Clear Coverage Data", true, true, true){
+					@Override
+					public void run(TaskMonitor monitor) throws CancelledException {
+						controller.clearCoverage(monitor);
+					}
+				};
+				TaskLauncher.launch(task);	
 			}
 		};
 		clearAction.setToolBarData(new ToolBarData(Icons.DELETE_ICON, null));		
@@ -161,6 +176,13 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
 		this.table.repaint();		
-		this.controller.colour(this.model.getHits());		
+		Task task = new Task("Paint Coverage Data", true, true, true){
+			@Override
+			public void run(TaskMonitor monitor) throws CancelledException {
+				controller.colour(monitor, model.getHits());
+			}
+		};
+		TaskLauncher.launch(task);
+				
 	}	
 }

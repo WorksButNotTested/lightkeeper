@@ -2,6 +2,7 @@ package lightkeeper.controller;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
 
 import ghidra.app.plugin.core.colorizer.ColorizingService;
 import ghidra.app.services.CodeViewerService;
@@ -14,7 +15,10 @@ import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.Swing;
+import ghidra.util.exception.CancelledException;
+import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
+import lightkeeper.io.LightKeeperFile;
 import lightkeeper.model.LightKeeperCoverageModel;
 import lightkeeper.model.LightKeeperCoverageModelRow;
 
@@ -45,7 +49,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		codeViewerService.goTo(programLocation, true);
 	}
 	
-	public void colour(Iterable<AddressRange> ranges) {			
+	public void colour(TaskMonitor monitor, Iterable<AddressRange> ranges) throws CancelledException {
 		ColorizingService colorService = plugin.getTool().getService(ColorizingService.class);
 		if (colorService == null)
 			return;
@@ -59,7 +63,13 @@ public class LightKeeperController implements LightKeeperEventListener {
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			ranges.forEach(r -> colorService.setBackgroundColor(r.getMinAddress(), r.getMaxAddress(), Color.RED));
+			for (AddressRange range: ranges)
+			{
+				monitor.checkCanceled();
+				Address min = range.getMinAddress();
+				Address max = range.getMaxAddress();
+				colorService.setBackgroundColor(min, max, Color.RED);
+			}			
 			completed = true;
 		} finally {
 			program.endTransaction(transaction, completed);
@@ -96,18 +106,48 @@ public class LightKeeperController implements LightKeeperEventListener {
 		});
 	}
 	
-	public LightKeeperImportTask createImportTask(File file) {
-		LightKeeperImportTask task = new LightKeeperImportTask(this, this.model, file);
-		return task;
+	public void importCoverage(TaskMonitor monitor, File file) throws CancelledException {
+		monitor.checkCanceled();
+		monitor.setMessage(String.format("Importing: %s",file.getAbsolutePath()));
+		this.addMessage(String.format("Importing: %s",file.getAbsolutePath()));
+		try {			
+			monitor.setProgress(0);
+			
+			LightKeeperFile dataFile = new LightKeeperFile(file, monitor);
+			dataFile.addListener(this);
+			dataFile.read();
+			
+			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
+			this.model.load(dataFile);
+			this.model.update(monitor);			
+			this.addMessage("Completed");
+			monitor.setProgress(100);
+		} catch (IOException e) {
+			this.addException(e);
+		}
 	}
 	
-	public LightKeeperRefreshTask createRefreshTask() {
-		LightKeeperRefreshTask task = new LightKeeperRefreshTask(this, this.model);
-		return task;
+	public void clearCoverage(TaskMonitor monitor) throws CancelledException {
+		monitor.checkCanceled();
+		monitor.setMessage("Clearing");
+		this.addMessage("Clearing");		
+		monitor.setProgress(0);
+		this.model.clear();
+		this.addMessage("Completed");
+		monitor.setProgress(100);
 	}
 	
-	public LightKeeperClearTask createClearTask() {
-		LightKeeperClearTask task = new LightKeeperClearTask(this, this.model);
-		return task;
-	}
+	public void refreshCoverage(TaskMonitor monitor) throws CancelledException {
+		monitor.checkCanceled();
+		monitor.setMessage("Refreshing");
+		this.addMessage("Refreshing");
+		try {			
+			monitor.setProgress(0);
+			this.model.update(monitor);			
+			this.addMessage("Completed");
+			monitor.setProgress(100);
+		} catch (IOException e) {
+			this.addException(e);
+		}
+	}	
 }
