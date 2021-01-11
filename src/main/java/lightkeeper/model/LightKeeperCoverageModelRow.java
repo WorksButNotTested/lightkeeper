@@ -1,7 +1,5 @@
 package lightkeeper.model;
 
-import java.util.Comparator;
-
 public class LightKeeperCoverageModelRow {
 	protected String name;
 	protected long address;
@@ -46,25 +44,5 @@ public class LightKeeperCoverageModelRow {
 	
 	public long getFunctionSize() {
 		return this.functionSize;
-	}
-	
-	public static Comparator<LightKeeperCoverageModelRow> getComparer(int columnIndex) {
-		switch(columnIndex) {
-			case 0:
-				return Comparator.comparingDouble(LightKeeperCoverageModelRow::getCoverage);
-			case 1:
-				return Comparator.comparingLong(LightKeeperCoverageModelRow::getAddress);
-			case 2:
-				return Comparator.comparing(LightKeeperCoverageModelRow::getName);
-			case 3:			
-				return Comparator.comparing(t -> t.getBlocks());
-			case 4:
-				return Comparator.comparing(t -> t.getInstructions());
-			case 5:
-				return Comparator.comparingLong(LightKeeperCoverageModelRow::getFunctionSize);
-			default:
-				throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
-		}
-		
 	}
 }

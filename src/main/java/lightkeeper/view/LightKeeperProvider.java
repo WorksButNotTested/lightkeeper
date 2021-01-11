@@ -17,6 +17,7 @@ import docking.action.MenuData;
 import docking.widgets.table.GTable;
 import docking.widgets.table.TableSortStateEditor;
 import ghidra.app.plugin.core.colorizer.ColorizingService;
+import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import lightkeeper.LightKeeperPlugin;
@@ -45,6 +46,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		sortStateEditor.addSortedColumn(0);
 		model.setTableSortState(sortStateEditor.createTableSortState());
 		model.addTableModelListener(this);
+		
 		table = new GTable();
 		table.setModel(model);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);		
@@ -87,7 +89,11 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			return;	
 		
 		boolean completed = false;
-		Program program = plugin.getApi().getCurrentProgram();
+		FlatProgramAPI api = plugin.getApi();
+		if (api == null)
+			return;
+		
+		Program program = api.getCurrentProgram();		
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
