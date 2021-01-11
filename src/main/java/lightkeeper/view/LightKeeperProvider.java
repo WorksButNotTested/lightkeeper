@@ -1,6 +1,9 @@
 package lightkeeper.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -11,6 +14,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import docking.ActionContext;
 import docking.ComponentProvider;
@@ -29,6 +33,7 @@ import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperController;
 import lightkeeper.model.LightKeeperCoverageModel;
+import lightkeeper.model.LightKeeperCoverageModelRow;
 import resources.Icons;
 import resources.ResourceManager;
 
@@ -74,6 +79,31 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		        	controller.goTo(row);    				
 		        }
 		    }
+		});
+		table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
+				Component component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
+				LightKeeperCoverageModelRow modelRow = model.getModelData().get(row);
+				if (modelRow.getCoverage() == 0.0d) {					
+					component.setForeground(Color.BLACK);
+					Font font = component.getFont();
+					Font newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
+					component.setFont(newFont);
+				} else if (modelRow.getCoverage() < 20.0d){
+					component.setForeground(Color.BLUE);
+				} else if (modelRow.getCoverage() < 40.0d){
+					component.setForeground(Color.GREEN);
+				} else if (modelRow.getCoverage() < 60.0d){
+					component.setForeground(Color.YELLOW);
+				} else if (modelRow.getCoverage() < 80.0d){
+					component.setForeground(Color.ORANGE);
+				} else {
+					component.setForeground(Color.RED);
+				}
+				return component;
+				
+			}
 		});
 		panel.add(new JScrollPane(table));
 		setVisible(true);
