@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import docking.widgets.table.AbstractSortedTableModel;
+import docking.widgets.table.TableSortStateEditor;
 import ghidra.program.model.address.AddressRange;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
@@ -51,6 +52,10 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		super();
 		this.plugin = plugin;
 		this.builder = new LightKeeperCoverageModelBuilder(plugin);
+		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
+		tableSortStateEditor.addSortedColumn(0);
+		tableSortStateEditor.addSortedColumn(2);
+		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 
 	public void update(TaskMonitor monitor, LightKeeperFile file) throws CancelledException, IOException
