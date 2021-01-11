@@ -100,4 +100,9 @@ public class LightKeeperController implements LightKeeperEventListener {
 		LightKeeperImportTask task = new LightKeeperImportTask(this, this.model, file);
 		return task;
 	}
+	
+	public LightKeeperRefreshTask createRefreshTask() {
+		LightKeeperRefreshTask task = new LightKeeperRefreshTask(this, this.model);
+		return task;
+	}
 }

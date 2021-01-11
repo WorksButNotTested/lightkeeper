@@ -26,17 +26,18 @@ public class LightKeeperImportTask extends Task {
 		monitor.checkCanceled();
 		monitor.setMessage(String.format("Importing: %s",this.file.getAbsolutePath()));
 		controller.addMessage(String.format("Importing: %s",this.file.getAbsolutePath()));
-		try {
-			monitor.setMaximum(15);
+		try {			
 			monitor.setProgress(0);
 			
 			LightKeeperFile dataFile = new LightKeeperFile(this.file, monitor);
 			dataFile.addListener(this.controller);
 			dataFile.read();
 			
-			controller.addMessage(String.format("Imported: %s",this.file.getAbsolutePath()));			
-			this.model.update(monitor, dataFile);			
+			controller.addMessage(String.format("Imported: %s",this.file.getAbsolutePath()));
+			this.model.load(dataFile);
+			this.model.update(monitor);			
 			controller.addMessage("Completed");
+			monitor.setProgress(100);
 		} catch (IOException e) {
 			controller.addException(e);
 		}

@@ -26,13 +26,14 @@ import ghidra.util.task.TaskLauncher;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperController;
 import lightkeeper.controller.LightKeeperImportTask;
+import lightkeeper.controller.LightKeeperRefreshTask;
 import lightkeeper.model.LightKeeperCoverageModel;
 import resources.Icons;
 import resources.ResourceManager;
 
 public class LightKeeperProvider extends ComponentProvider implements TableModelListener {
 
-	private static File lastFile = new File (System.getProperty("user.dir"));
+	private static File lastFile = null;
 	
 	protected LightKeeperPlugin plugin;
 	protected LightKeeperCoverageModel model;
@@ -89,15 +90,20 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		
 		dockingTool.addLocalAction(this, aboutAction);
 		
-		GhidraFileChooser chooser = new GhidraFileChooser(panel);
-		chooser.setSelectedFile(lastFile);
+		GhidraFileChooser chooser = new GhidraFileChooser(panel);		
 		chooser.setTitle("Import Coverage Data");
 		chooser.setApproveButtonText("Import");
 		chooser.setFileSelectionMode(GhidraFileChooserMode.FILES_ONLY);
 		
 		DockingAction importAction = new DockingAction("Import Coverage Data", getName()) {
 			@Override
-			public void actionPerformed(ActionContext context) {						
+			public void actionPerformed(ActionContext context) {
+				if (lastFile == null) {
+					chooser.setSelectedFile(new File (System.getProperty("user.dir")));
+				} else {
+					chooser.setSelectedFile(lastFile);
+				}
+				
 				File file = chooser.getSelectedFile();
 				if (file == null)
 					return;
@@ -105,7 +111,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				if (!file.exists())
 					return;
 				
-				lastFile = new File (file.getParent());
+				lastFile = file;
 													
 				LightKeeperImportTask task = controller.createImportTask(file);
 				TaskLauncher.launch(task);		
@@ -114,6 +120,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		importAction.setToolBarData(new ToolBarData(Icons.ADD_ICON, null));		
 		importAction.setEnabled(true);
 		dockingTool.addLocalAction(this, importAction);
+		
+		DockingAction refreshAction = new DockingAction("Refresh", getName()) {
+			@Override
+			public void actionPerformed(ActionContext context) {		
+				if (lastFile == null)
+					return;
+				LightKeeperRefreshTask task = controller.createRefreshTask();
+				TaskLauncher.launch(task);		
+			}
+		};
+		refreshAction.setToolBarData(new ToolBarData(Icons.REFRESH_ICON, null));		
+		refreshAction.setEnabled(true);
+		dockingTool.addLocalAction(this, refreshAction);
 	}
 
 	@Override

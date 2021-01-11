@@ -25,6 +25,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
     };
 
 	protected LightKeeperPlugin plugin;
+	protected LightKeeperFile file;
 	protected LightKeeperCoverageModelBuilder builder;
 	
 	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
@@ -50,19 +51,26 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 	
 	public LightKeeperCoverageModel(LightKeeperPlugin plugin) {
 		super();
-		this.plugin = plugin;
+		this.plugin = plugin;		
 		this.builder = new LightKeeperCoverageModelBuilder(plugin);
 		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
 		tableSortStateEditor.addSortedColumn(0);
 		tableSortStateEditor.addSortedColumn(2);
 		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
+	
+	public void load(LightKeeperFile lightKeeperFile) {
+		this.file = lightKeeperFile;
+	}
 
-	public void update(TaskMonitor monitor, LightKeeperFile file) throws CancelledException, IOException
+	public void update(TaskMonitor monitor) throws CancelledException, IOException
 	{
+		if (this.file == null)
+			return;
+		
 		this.builder = new LightKeeperCoverageModelBuilder(this.plugin);
 		builder.addListener(this);
-		builder.build(monitor, file);
+		builder.build(monitor, this.file);
 		monitor.checkCanceled();		
 		fireTableDataChanged();
 	}	
