@@ -9,6 +9,7 @@ import ghidra.app.services.ConsoleService;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
+import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
 import ghidra.program.util.ProgramLocation;
@@ -44,7 +45,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		codeViewerService.goTo(programLocation, true);
 	}
 	
-	public void colour() {			
+	public void colour(Iterable<AddressRange> ranges) {			
 		ColorizingService colorService = plugin.getTool().getService(ColorizingService.class);
 		if (colorService == null)
 			return;
@@ -58,7 +59,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			this.model.getHits().forEach(r -> colorService.setBackgroundColor(r.getMinAddress(), r.getMaxAddress(), Color.RED));
+			ranges.forEach(r -> colorService.setBackgroundColor(r.getMinAddress(), r.getMaxAddress(), Color.RED));
 			completed = true;
 		} finally {
 			program.endTransaction(transaction, completed);
