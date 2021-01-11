@@ -68,7 +68,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 				monitor.checkCanceled();
 				Address min = range.getMinAddress();
 				Address max = range.getMaxAddress();
-				colorService.setBackgroundColor(min, max, Color.RED);
+				colorService.setBackgroundColor(min, max, Color.GREEN);
 			}			
 			completed = true;
 		} finally {

@@ -216,7 +216,10 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 				if (block.contains(start, end)) {
 					hitInstructions++;					
 					Address instructionStart = instruction.getAddress();
-					Address instructionEnd = instructionStart.add(instruction.getLength());
+					long length = instruction.getLength();
+					if (length > 0)
+						length--;
+					Address instructionEnd = instructionStart.add(length);
 					AddressRange range = new AddressRangeImpl(instructionStart, instructionEnd);
 					this.hits.add(range);					
 				}
