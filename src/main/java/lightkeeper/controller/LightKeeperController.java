@@ -49,7 +49,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		codeViewerService.goTo(programLocation, true);
 	}
 	
-	public void colour(TaskMonitor monitor, Iterable<AddressRange> ranges) throws CancelledException {
+	public void colour(TaskMonitor monitor) throws CancelledException {
 		ColorizingService colorService = plugin.getTool().getService(ColorizingService.class);
 		if (colorService == null)
 			return;
@@ -63,7 +63,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			for (AddressRange range: ranges)
+			for (AddressRange range: model.getHits())
 			{
 				monitor.checkCanceled();
 				Address min = range.getMinAddress();
@@ -74,8 +74,8 @@ public class LightKeeperController implements LightKeeperEventListener {
 		} finally {
 			program.endTransaction(transaction, completed);
 		}	
-	}
-		
+	}	
+	
 	public void addMessage(String message) {
 		Swing.runLater(() -> {
 			ConsoleService consoleService = plugin.getTool().getService(ConsoleService.class);
@@ -119,7 +119,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
 			this.model.load(dataFile);
-			this.model.update(monitor);			
+			this.model.update(monitor);
 			this.addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {

@@ -208,8 +208,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		this.table.repaint();		
 		Task task = new Task("Paint Coverage Data", true, true, true){
 			@Override
-			public void run(TaskMonitor monitor) throws CancelledException {
-				controller.colour(monitor, model.getHits());
+			public void run(TaskMonitor monitor) throws CancelledException {				
+				controller.colour(monitor);				
 			}
 		};
 		TaskLauncher.launch(task);
