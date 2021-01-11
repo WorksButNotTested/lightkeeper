@@ -24,44 +24,72 @@ import ghidra.program.model.listing.InstructionIterator;
 import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.ILightKeeperTaskEventListener;
+import lightkeeper.LightKeeperPlugin;
+import lightkeeper.controller.LightKeeperEventListener;
 import lightkeeper.io.LightKeeperFile;
 import lightkeeper.io.block.LightKeeperBlockEntry;
 import lightkeeper.io.module.LightKeeperModuleEntry;
 
-public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeeperCoverageModelRow>{
-	
+public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeeperCoverageModelRow> implements LightKeeperEventListener {
 	private String[] columnNames = {
-			"Coverage %",
-			"Function Name",
-			"Address",
-			"Blocks Hit",
-			"Instructions Hit",
-			"Function Size"
-	    };
+		"Coverage %",
+		"Function Name",
+		"Address",
+		"Blocks Hit",
+		"Instructions Hit",
+		"Function Size"
+    };
 
+	protected LightKeeperPlugin plugin;
 	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
+	
+	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
+	
+	public void addListener(LightKeeperEventListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	@Override
+	public void addMessage(String message) {
+		this.listeners.forEach(l -> l.addMessage(message));
+	}
+	
+	@Override
+	public void addErrorMessage(String message) {
+		this.listeners.forEach(l -> l.addErrorMessage(message));
+	}
 
-	public void update(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException
+	@Override
+	public void addException(Exception exc) {
+		this.listeners.forEach(l -> l.addException(exc));		
+	}
+	
+	public LightKeeperCoverageModel(LightKeeperPlugin plugin) {
+		super();
+		this.plugin = plugin;
+	}
+
+	public void update(TaskMonitor monitor, LightKeeperFile file) throws CancelledException, IOException
 	{
 		monitor.checkCanceled();
 		rows = new ArrayList<LightKeeperCoverageModelRow>();
-		LightKeeperModuleEntry module = this.getModule(listener, monitor, api, file);
+		LightKeeperModuleEntry module = this.getModule(monitor, file);
 		monitor.checkCanceled();
 		
-		this.processEntries(listener, monitor, api, file, module);
+		this.processEntries(monitor, file, module);
 		monitor.setMessage("Processing complete");
-		listener.addMessage("Processing complete");
+		this.addMessage("Processing complete");
 		monitor.checkCanceled();
 		
 		fireTableDataChanged();
 	}
 	
-	public LightKeeperModuleEntry getModule (ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file) throws CancelledException, IOException {
+	public LightKeeperModuleEntry getModule (TaskMonitor monitor, LightKeeperFile file) throws CancelledException, IOException {
+		FlatProgramAPI api = this.plugin.getApi();
 		File programFile = api.getProgramFile();
 		String programFileName = programFile.getName();
-		listener.addMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
+		this.addMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
 		monitor.setMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
 		
 		ArrayList<LightKeeperModuleEntry> modules = file.getModules();
@@ -79,9 +107,10 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
 	}
 	
-	public void processEntries(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, LightKeeperFile file, LightKeeperModuleEntry module) throws CancelledException, IOException {
+	public void processEntries(TaskMonitor monitor, LightKeeperFile file, LightKeeperModuleEntry module) throws CancelledException, IOException {
+		FlatProgramAPI api = this.plugin.getApi();
 		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
-		listener.addMessage(String.format("Base address: %x", baseAddress.getOffset()));
+		this.addMessage(String.format("Base address: %x", baseAddress.getOffset()));
 		HashMap<Function, Set<LightKeeperBlockEntry>> functions = new HashMap<Function, Set<LightKeeperBlockEntry>>();
 		Set<LightKeeperBlockEntry> unassigned = new HashSet<LightKeeperBlockEntry>();
 		
@@ -100,10 +129,10 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 			Address addr = baseAddress.add(block.getStart());
 			Function function = api.getFunctionContaining(addr);
 			if (function == null) {
-				listener.addMessage(String.format("No function found at: %x", addr.getOffset()));
+				this.addMessage(String.format("No function found at: %x", addr.getOffset()));
 				unassigned.add(block);
 			} else {
-				listener.addMessage(String.format("Found function: '%s' at: %x", function.getName(), addr.getOffset()));
+				this.addMessage(String.format("Found function: '%s' at: %x", function.getName(), addr.getOffset()));
 				Set<LightKeeperBlockEntry> set = functions.get(function);
 				if (set == null) {
 					set = new HashSet<LightKeeperBlockEntry>();
@@ -112,11 +141,11 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 				set.add(block);
 			}
 		}
-		this.processFunctions(listener, monitor, api, functions);
-		this.processUnassigned(listener, monitor, api, unassigned);
+		this.processFunctions(monitor, functions);
+		this.processUnassigned(monitor, unassigned);
 	}
 	
-	public void processFunctions(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, HashMap<Function, Set<LightKeeperBlockEntry>> functions) throws CancelledException {
+	public void processFunctions(TaskMonitor monitor, HashMap<Function, Set<LightKeeperBlockEntry>> functions) throws CancelledException {
 		
 		Iterator<Function> functionIterator = functions.keySet().iterator();
 		int i = 0;
@@ -125,12 +154,12 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 			monitor.checkCanceled();
 			Function function = functionIterator.next();
 			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
-			listener.addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
+			this.addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
 			AddressSetView body = function.getBody();
 			Set<LightKeeperBlockEntry> blocks = functions.get(function);
 			
-			Pair<Integer, Integer> codeBlockInfo = this.processCodeBlocks(listener, monitor, api, function, blocks);
-			Pair<Integer, Integer> instructionInfo = this.processInstructions(listener, monitor, api, function, blocks);
+			Pair<Integer, Integer> codeBlockInfo = this.processCodeBlocks(monitor, function, blocks);
+			Pair<Integer, Integer> instructionInfo = this.processInstructions(monitor, function, blocks);
 			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
 			
 			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), 
@@ -139,7 +168,8 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		}
 	}
 	
-	public Pair<Integer, Integer> processCodeBlocks(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+	public Pair<Integer, Integer> processCodeBlocks(TaskMonitor monitor, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+		FlatProgramAPI api = this.plugin.getApi();
 		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
 		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
 		AddressSetView body = function.getBody();
@@ -151,7 +181,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 			codeBlocks++;
 			
 			monitor.setMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
-			listener.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
+			this.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
 			
 			CodeBlock cb = codeBlockIterator.next();
 			long start = cb.getMinAddress().subtract(baseAddress);
@@ -171,7 +201,8 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		return new Pair<Integer, Integer>(Integer.valueOf(codeBlocks), Integer.valueOf(hitCodeBlocks));
 	}
 	
-	public Pair<Integer, Integer> processInstructions(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+	public Pair<Integer, Integer> processInstructions(TaskMonitor monitor, Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+		FlatProgramAPI api = this.plugin.getApi();
 		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
 		Listing listing = api.getCurrentProgram().getListing();
 		AddressSetView body = function.getBody();
@@ -182,7 +213,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 			monitor.checkCanceled();
 			instructions++;
 			monitor.setMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
-			listener.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
+			this.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
 			
 			Instruction instruction = instructionIterator.next();
 			Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();
@@ -198,7 +229,8 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		return new Pair<Integer, Integer>(Integer.valueOf(instructions), Integer.valueOf(hitInstructions));
 	}
 	
-	public void processUnassigned(ILightKeeperTaskEventListener listener, TaskMonitor monitor, FlatProgramAPI api, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+	public void processUnassigned(TaskMonitor monitor, Set<LightKeeperBlockEntry> blocks) throws CancelledException {
+		FlatProgramAPI api = this.plugin.getApi();
 		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
 		Iterator<LightKeeperBlockEntry> iterator = blocks.iterator();
 		int i = 0;
@@ -206,7 +238,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 			i++;
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing unassigned block %d / %d", i, blocks.size()));
-			listener.addMessage(String.format("Processing unassigned block %d / %d", i, blocks.size()));
+			this.addMessage(String.format("Processing unassigned block %d / %d", i, blocks.size()));
 			LightKeeperBlockEntry block = iterator.next();
 			Address addr = baseAddress.add(block.getStart());
 			String name = String.format("_unknown_%x", addr.getOffset());

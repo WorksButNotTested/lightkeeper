@@ -5,35 +5,30 @@ import java.io.File;
 import docking.ActionContext;
 import docking.action.DockingAction;
 import docking.action.ToolBarData;
-import ghidra.app.services.ConsoleService;
 import ghidra.util.task.TaskLauncher;
-import lightkeeper.LightKeeperPlugin;
+import lightkeeper.controller.LightKeeperController;
 import lightkeeper.controller.LightKeeperImportTask;
 import resources.Icons;
 
 public class LightKeeperImportAction extends DockingAction {
-	protected LightKeeperPlugin plugin;
+	protected LightKeeperController controller;
 	protected LightKeeperProvider provider;
 	
-	public LightKeeperImportAction(LightKeeperPlugin plugin, LightKeeperProvider provider) {
-		super("Import Coverage Data", plugin.getName());
-		this.plugin = plugin;
+	public LightKeeperImportAction(LightKeeperController controller, LightKeeperProvider provider) {
+		super("Import Coverage Data", "Light Keeper");
+		this.controller = controller;
 		this.provider = provider;
 		this.setToolBarData(new ToolBarData(Icons.ADD_ICON, null));
 	}
 
 	@Override
 	public void actionPerformed(ActionContext context) {
-		File f = LightKeeperFileChooser.selectFile(provider.getComponent());
-		if (f == null) {
+		File file = LightKeeperFileChooser.selectFile(provider.getComponent());
+		if (file == null) {
 			return;
 		}
-		
-		ConsoleService console = plugin.getTool().getService(ConsoleService.class);
-		console.addMessage("Light Keeper", String.format("Importing File: %s", f.getAbsolutePath()));
-		LightKeeperTaskEventListener listener = new LightKeeperTaskEventListener(console);
-		LightKeeperImportTask task = new LightKeeperImportTask(this.plugin, this.provider.getModel(), f, listener);
-		TaskLauncher.launch(task);
-		console.addErrorMessage("Light Keeper", "Completed");
+				
+		LightKeeperImportTask task = controller.createImportTask(file);
+		TaskLauncher.launch(task);		
 	}
 }

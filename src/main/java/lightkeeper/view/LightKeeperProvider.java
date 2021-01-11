@@ -1,7 +1,8 @@
 package lightkeeper.view;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -16,11 +17,9 @@ import docking.action.DockingAction;
 import docking.action.MenuData;
 import docking.widgets.table.GTable;
 import docking.widgets.table.TableSortStateEditor;
-import ghidra.app.plugin.core.colorizer.ColorizingService;
-import ghidra.program.flatapi.FlatProgramAPI;
-import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
 import lightkeeper.LightKeeperPlugin;
+import lightkeeper.controller.LightKeeperController;
 import lightkeeper.model.LightKeeperCoverageModel;
 import resources.ResourceManager;
 
@@ -28,20 +27,22 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 	protected LightKeeperPlugin plugin;
 	protected LightKeeperCoverageModel model;
+	protected LightKeeperController controller;
 	protected GTable table;
 	protected JPanel panel;
 
-	public LightKeeperProvider(LightKeeperPlugin plugin, String owner) {
+	public LightKeeperProvider(LightKeeperPlugin plugin, LightKeeperController controller, LightKeeperCoverageModel model, String owner) {
 		super(plugin.getTool(), owner, owner);
 		this.plugin = plugin;
+		this.controller = controller;
+		this.model = model;		
 		buildPanel();
 		createActions();
 		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
 
 	private void buildPanel() {
-		panel = new JPanel(new BorderLayout());
-		model = new LightKeeperCoverageModel();
+		panel = new JPanel(new BorderLayout());		
 		TableSortStateEditor sortStateEditor = new TableSortStateEditor();
 		sortStateEditor.addSortedColumn(0);
 		model.setTableSortState(sortStateEditor.createTableSortState());
@@ -50,7 +51,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		table = new GTable();
 		table.setModel(model);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);		
-		table.setUserSortingEnabled(true);		
+		table.setUserSortingEnabled(true);
+		table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e){
+		        if(e.getClickCount()==2){
+		        	int row = table.getSelectedRow();
+		        	if (row == -1)
+		        		return;
+		        		        
+		        	controller.goTo(row);    				
+		        }
+		    }
+		});
 		panel.add(new JScrollPane(table));
 		setVisible(true);
 	}
@@ -67,7 +80,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		
 		dockingTool.addLocalAction(this, aboutAction);
 		
-		LightKeeperImportAction importAction = new LightKeeperImportAction (this.plugin, this);
+		LightKeeperImportAction importAction = new LightKeeperImportAction (this.controller, this);
 		importAction.setEnabled(true);
 		dockingTool.addLocalAction(this, importAction);
 	}
@@ -80,28 +93,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
 		this.table.repaint();		
-		this.repaintColours();
-	}
-	
-	protected void repaintColours() {
-		ColorizingService colorService = plugin.getTool().getService(ColorizingService.class);
-		if (colorService == null)
-			return;	
-		
-		boolean completed = false;
-		FlatProgramAPI api = plugin.getApi();
-		if (api == null)
-			return;
-		
-		Program program = api.getCurrentProgram();		
-		int transaction = program.startTransaction("Light Keeper");
-		try {
-			colorService.clearAllBackgroundColors();
-			this.model.getHits().forEach(r -> colorService.setBackgroundColor(r.getMinAddress(), r.getMaxAddress(), Color.RED));
-			completed = true;
-		} finally {
-			program.endTransaction(transaction, completed);
-		}	
+		this.controller.colour();		
 	}
 	
 	public LightKeeperCoverageModel getModel() {

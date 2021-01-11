@@ -4,24 +4,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.ILightKeeperTaskEventListener;
+import lightkeeper.controller.LightKeeperEventListener;
 import lightkeeper.io.block.LightKeeperBlockEntry;
 import lightkeeper.io.block.LightKeeperBlockReader;
 import lightkeeper.io.module.LightKeeperModuleEntry;
 import lightkeeper.io.module.LightKeeperModuleReader;
 
-public class LightKeeperFile {		
+public class LightKeeperFile implements LightKeeperEventListener {		
 	protected final String HEADER = "DRCOV VERSION: 2";
 	protected final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
 	protected final Pattern TABLE_REGEX = Pattern.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
 	protected final Pattern BB_TABLE_REGEX = Pattern.compile("^BB Table: (?<blocks>\\d+) bbs$");
-		
-	protected ILightKeeperTaskEventListener listener;
+			
 	protected TaskMonitor monitor;
 	protected LightKeeperByteProvider provider;
 	protected LightKeeperReader reader;	
@@ -32,14 +32,16 @@ public class LightKeeperFile {
 	protected ArrayList<LightKeeperModuleEntry> modules = new ArrayList<LightKeeperModuleEntry>();
 	protected long blockCount;
 	protected ArrayList<LightKeeperBlockEntry> blocks = new ArrayList<LightKeeperBlockEntry>();
+	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
 	
-	private LightKeeperFile (File file, ILightKeeperTaskEventListener listener, TaskMonitor monitor) throws IOException, CancelledException {
-		this.listener = listener;
+	public LightKeeperFile (File file, TaskMonitor monitor) throws IOException {		
 		this.monitor = monitor;
 		FileInputStream stream = new FileInputStream(file);
 		this.provider = new LightKeeperByteProvider(stream, file.length());
-		this.reader = new LightKeeperReader(provider);
-				
+		this.reader = new LightKeeperReader(provider);			
+	}
+	
+	public void read() throws IOException, CancelledException {
 		this.readHeader();
 		this.readFlavour();
 		this.readTable();		
@@ -48,11 +50,30 @@ public class LightKeeperFile {
 		this.readBlocks();
 	}
 	
+	public void addListener(LightKeeperEventListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	@Override
+	public void addMessage(String message) {
+		this.listeners.forEach(l -> l.addMessage(message));
+	}
+	
+	@Override
+	public void addErrorMessage(String message) {
+		this.listeners.forEach(l -> l.addErrorMessage(message));
+	}
+
+	@Override
+	public void addException(Exception exc) {
+		this.listeners.forEach(l -> l.addException(exc));		
+	}
+	
 	private void readHeader() throws CancelledException, IOException {
 		this.monitor.checkCanceled();
 		this.monitor.setMessage("Reading header");
 		String headerLine = this.reader.readLine();
-		listener.addMessage(headerLine);		
+		this.addMessage(headerLine);		
 		if (!headerLine.equals(HEADER))		
 			throw new IOException(String.format("Invalid header: '%s' expected '%s'", headerLine, HEADER));			
 		this.monitor.checkCanceled();
@@ -62,12 +83,12 @@ public class LightKeeperFile {
 		this.monitor.checkCanceled();
 		this.monitor.setMessage("Reading flavour");
 		String flavourLine = this.reader.readLine();
-		listener.addMessage(flavourLine);
+		this.addMessage(flavourLine);
 		Matcher flavourMatcher = FLAVOUR_REGEX.matcher(flavourLine);
 		if (!flavourMatcher.matches())
 			throw new IOException(String.format("Invalid flavour: '%s'", flavourLine));
 		this.flavour = flavourMatcher.group("flavour");
-		listener.addMessage(String.format("Detected flavour: %s", this.flavour));
+		this.addMessage(String.format("Detected flavour: %s", this.flavour));
 		this.monitor.checkCanceled();
 	}
 	
@@ -75,7 +96,7 @@ public class LightKeeperFile {
 		this.monitor.checkCanceled();
 		this.monitor.setMessage("Reading table");
 		String tableLine = reader.readLine();
-		this.listener.addMessage(tableLine);
+		this.addMessage(tableLine);
 		Matcher tableMatcher = TABLE_REGEX.matcher(tableLine);
 		if (!tableMatcher.matches())
 			throw new IOException(String.format("Invalid table header: '%s'", tableLine));
@@ -86,16 +107,17 @@ public class LightKeeperFile {
 		else
 			this.tableVersion = Integer.parseInt(version);
 		
-		this.listener.addMessage(String.format("Detected table version: %d", this.tableVersion));
+		this.addMessage(String.format("Detected table version: %d", this.tableVersion));
 			
 		String count = tableMatcher.group("count");
 		this.tableCount = Integer.parseInt(count);
-		this.listener.addMessage(String.format("Detected table count: %d", this.tableCount));		
+		this.addMessage(String.format("Detected table count: %d", this.tableCount));		
 		this.monitor.checkCanceled();
 	}
 	
 	private void readModules() throws CancelledException, IOException {
-		LightKeeperModuleReader moduleReader = new LightKeeperModuleReader(this.listener, this.monitor, this.reader, this.tableVersion);
+		LightKeeperModuleReader moduleReader = new LightKeeperModuleReader(this.monitor, this.reader, this.tableVersion);
+		moduleReader.addListener(this);
 		for (int i = 0; i < tableCount; i++)
 		{
 			this.monitor.checkCanceled();
@@ -109,19 +131,21 @@ public class LightKeeperFile {
 		this.monitor.checkCanceled();
 		this.monitor.setMessage("Reading BB header");
 		String bbHeaderLine = this.reader.readLine();
-		listener.addMessage(bbHeaderLine);
+		this.addMessage(bbHeaderLine);
 		Matcher bbHeaderMatcher = BB_TABLE_REGEX.matcher(bbHeaderLine);
 		if (!bbHeaderMatcher.matches())
 			throw new IOException(String.format("Invalid block header: '%s'", bbHeaderLine));
 		
 		String blockString = bbHeaderMatcher.group("blocks");
 		this.blockCount = Integer.parseInt(blockString);		
-		listener.addMessage(String.format("Detected: %d blocks", this.blockCount));
+		this.addMessage(String.format("Detected: %d blocks", this.blockCount));
 		this.monitor.checkCanceled();
 	}
 	
 	private void readBlocks() throws CancelledException, IOException {
-		LightKeeperBlockReader blockReader = new LightKeeperBlockReader(this.listener, this.monitor, this.reader);
+		LightKeeperBlockReader blockReader = new LightKeeperBlockReader(this.monitor, this.reader);
+		blockReader.addListener(this);
+		
 		for (int i = 0; i < this.blockCount; i++)
 		{
 			this.monitor.checkCanceled();
@@ -136,11 +160,7 @@ public class LightKeeperFile {
 			throw new IOException(String.format("File has: %d unexpected trailing bytes at position: %d", this.provider.getLength() - this.provider.getPosition(), this.provider.getPosition()));
 		
 		this.monitor.setMessage("File parsing complete");
-		this.listener.addMessage("File parsing complete");
-	}
-	
-	public static LightKeeperFile read(File file, ILightKeeperTaskEventListener listener, TaskMonitor monitor) throws IOException, CancelledException {
-		return new LightKeeperFile(file, listener, monitor);
+		this.addMessage("File parsing complete");
 	}
 	
 	public ArrayList<LightKeeperModuleEntry> getModules() {

@@ -22,6 +22,8 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
+import lightkeeper.controller.LightKeeperController;
+import lightkeeper.model.LightKeeperCoverageModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
@@ -35,13 +37,18 @@ import lightkeeper.view.LightKeeperProvider;
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 
+	protected LightKeeperCoverageModel model;
+	protected LightKeeperController controller;
 	protected LightKeeperProvider provider;
 	protected Program program;
 	protected FlatProgramAPI api;
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		provider = new LightKeeperProvider(this, "Light Keeper");
+		model = new LightKeeperCoverageModel(this);
+		controller = new LightKeeperController(this, this.model);
+		model.addListener(controller);
+		provider = new LightKeeperProvider(this, this.controller,  this.model, "Light Keeper");
 	}
 
 	@Override

@@ -2,13 +2,14 @@ package lightkeeper.io.module;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.ILightKeeperTaskEventListener;
+import lightkeeper.controller.LightKeeperEventListener;
 import lightkeeper.io.LightKeeperReader;
 
 public class LightKeeperModuleReader {
@@ -31,7 +32,7 @@ public class LightKeeperModuleReader {
 	protected final String COLUMN_4_HDR_LINUX = "Columns: id, containing_id, start, end, entry, offset, path";
 	protected final Pattern COLUMN_4_HDR_LINUX_FMT = null;
 	
-	protected ILightKeeperTaskEventListener listener;
+	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
 	protected TaskMonitor monitor;
 	protected LightKeeperReader reader;
 	protected String columnHeader;
@@ -51,8 +52,7 @@ public class LightKeeperModuleReader {
 		}
 	}
 	
-	public LightKeeperModuleReader(ILightKeeperTaskEventListener listener, TaskMonitor monitor, LightKeeperReader reader, int tableVersion) throws CancelledException, IOException {
-		this.listener = listener;
+	public LightKeeperModuleReader(TaskMonitor monitor, LightKeeperReader reader, int tableVersion) throws CancelledException, IOException {		
 		this.monitor = monitor;
 		this.reader = reader;
 		
@@ -76,17 +76,25 @@ public class LightKeeperModuleReader {
 			throw new IOException (String.format("Unsupported pattern: '%s'", formats.get(0).header));
 	}
 	
+	public void addListener(LightKeeperEventListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	protected void addMessage(String message) {
+		this.listeners.forEach(l -> l.addMessage(message));
+	}
+	
 	private void readColumnHeader() throws CancelledException, IOException {
 		this.monitor.checkCanceled();
 		this.monitor.setMessage("Reading Column Header");
 		this.columnHeader = this.reader.readLine();
-		this.listener.addMessage(columnHeader);
+		this.addMessage(columnHeader);
 	}	
 	
 	public LightKeeperModuleEntry read() throws CancelledException, IOException {
 		this.monitor.checkCanceled();
 		String moduleLine = this.reader.readLine();
-		listener.addMessage(moduleLine);
+		this.addMessage(moduleLine);
 		Matcher moduleMatcher = this.selectedPattern.matcher(moduleLine);
 		if (!moduleMatcher.matches())
 			throw new IOException(String.format("Invalid module: '%s'", moduleMatcher));
@@ -104,7 +112,7 @@ public class LightKeeperModuleReader {
 		long timeStamp = parseNumber(timeStampString, (s) -> Long.parseLong(s, 16), String.format("Invalid time stamp: %s", timeStampString));
 		String pathString = moduleMatcher.group("path");
 		LightKeeperModuleEntry module = new LightKeeperModuleEntry(id, start, end, entry, checksum, timeStamp, pathString);
-		listener.addMessage(String.format("Read Module: %s", module));
+		this.addMessage(String.format("Read Module: %s", module));
 		this.monitor.checkCanceled();
 		return module;		
 	}

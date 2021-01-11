@@ -1,22 +1,44 @@
 package lightkeeper.io.block;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.ILightKeeperTaskEventListener;
+import lightkeeper.controller.LightKeeperEventListener;
 import lightkeeper.io.LightKeeperReader;
 
-public class LightKeeperBlockReader {
-	protected ILightKeeperTaskEventListener listener;
+public class LightKeeperBlockReader implements LightKeeperEventListener {	
 	protected TaskMonitor monitor;
 	protected LightKeeperReader reader;
-
-	public LightKeeperBlockReader(ILightKeeperTaskEventListener listener, TaskMonitor monitor, LightKeeperReader reader) {
-		this.listener = listener;
+	
+	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
+	
+	public LightKeeperBlockReader(TaskMonitor monitor, LightKeeperReader reader) {		
 		this.monitor = monitor;
 		this.reader = reader;
 	}
+	
+	public void addListener(LightKeeperEventListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	@Override
+	public void addMessage(String message) {
+		this.listeners.forEach(l -> l.addMessage(message));
+	}
+	
+	@Override
+	public void addErrorMessage(String message) {
+		this.listeners.forEach(l -> l.addErrorMessage(message));
+	}
+
+	@Override
+	public void addException(Exception exc) {
+		this.listeners.forEach(l -> l.addException(exc));		
+	}
+	
 	
 	public LightKeeperBlockEntry read() throws CancelledException, IOException {
 		this.monitor.checkCanceled();
@@ -25,7 +47,7 @@ public class LightKeeperBlockReader {
 		int module = this.reader.readNextUnsignedShort();
 		
 		LightKeeperBlockEntry block = new LightKeeperBlockEntry(start, size, module);
-		listener.addMessage(String.format("Read Block: %s", block));
+		this.addMessage(String.format("Read Block: %s", block));
 		this.monitor.checkCanceled();
 		return block;		
 	}
