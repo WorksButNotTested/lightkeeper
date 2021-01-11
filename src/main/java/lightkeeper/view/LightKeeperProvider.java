@@ -86,7 +86,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			}
 		};
 		aboutAction.setMenuBarData(
-				new MenuData(new String[] {"About"},null,null));
+				new MenuData(new String[] {"About"},null,"Help"));
 		
 		dockingTool.addLocalAction(this, aboutAction);
 		
@@ -119,6 +119,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		};
 		importAction.setToolBarData(new ToolBarData(Icons.ADD_ICON, null));		
 		importAction.setEnabled(true);
+		importAction.setMenuBarData(
+				new MenuData(new String[] {"Import"}, Icons.ADD_ICON, "Action"));
 		dockingTool.addLocalAction(this, importAction);
 		
 		DockingAction refreshAction = new DockingAction("Refresh", getName()) {
@@ -132,6 +134,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		};
 		refreshAction.setToolBarData(new ToolBarData(Icons.REFRESH_ICON, null));		
 		refreshAction.setEnabled(true);
+		refreshAction.setMenuBarData(
+				new MenuData(new String[] {"Refresh"}, Icons.REFRESH_ICON, "Action"));
 		dockingTool.addLocalAction(this, refreshAction);
 	}
 
