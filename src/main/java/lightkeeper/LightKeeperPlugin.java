@@ -52,7 +52,6 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		tableModel = new LightKeeperCoverageTableModel(this);
 		instructionModel = new LightKeeperCoverageInstructionModel(this);
 		controller = new LightKeeperController(this, this.tableModel, this.instructionModel);
-		tableModel.addListener(controller);
 		disassemblyController = new LightKeeperDisassemblyController(this, this.instructionModel);		
 		provider = new LightKeeperProvider(this, this.controller,  this.tableModel, "Light Keeper");
 	}

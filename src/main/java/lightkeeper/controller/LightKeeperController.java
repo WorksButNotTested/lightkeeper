@@ -37,6 +37,8 @@ public class LightKeeperController implements LightKeeperEventListener {
 		this.plugin = plugin;
 		this.tableModel = tableModel;
 		this.instructionModel = instructionModel;
+		tableModel.addListener(this);
+		instructionModel.addListener(this);
 		this.instructionModel.addInstructionModelListener(new LightKeeperCoverageInstructionModelListener() {
 			@Override
 			public void instructionsChanged() {

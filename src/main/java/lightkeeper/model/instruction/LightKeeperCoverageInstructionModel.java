@@ -2,6 +2,7 @@ package lightkeeper.model.instruction;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import ghidra.program.flatapi.FlatProgramAPI;
@@ -14,13 +15,35 @@ import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
+import lightkeeper.controller.LightKeeperEventListener;
 import lightkeeper.model.LightKeeperCoverageRangeCollection;
 
-public class LightKeeperCoverageInstructionModel {
+public class LightKeeperCoverageInstructionModel implements LightKeeperEventListener {
+	private List<LightKeeperEventListener> eventListeners = new ArrayList<LightKeeperEventListener>();
+	
+	public void addListener(LightKeeperEventListener listener) {
+		this.eventListeners.add(listener);
+	}
+	
+	@Override
+	public void addMessage(String message) {
+		this.eventListeners.forEach(l -> l.addMessage(message));
+	}
+	
+	@Override
+	public void addErrorMessage(String message) {
+		this.eventListeners.forEach(l -> l.addErrorMessage(message));
+	}
+
+	@Override
+	public void addException(Exception exc) {
+		this.eventListeners.forEach(l -> l.addException(exc));		
+	}
+	
 	protected LightKeeperPlugin plugin;
 	protected LightKeeperCoverageRangeCollection modelRanges;
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
-	protected ArrayList<LightKeeperCoverageInstructionModelListener> listeners = new ArrayList<LightKeeperCoverageInstructionModelListener>();
+	protected ArrayList<LightKeeperCoverageInstructionModelListener> modelListeners = new ArrayList<LightKeeperCoverageInstructionModelListener>();
 	
 	public LightKeeperCoverageInstructionModel(LightKeeperPlugin plugin) {
 		this.plugin = plugin;	
@@ -57,17 +80,17 @@ public class LightKeeperCoverageInstructionModel {
 				this.hits.add(instructionRange);
 			}
 		}
-		listeners.forEach(l -> l.instructionsChanged());
+		modelListeners.forEach(l -> l.instructionsChanged());
 	}
 	
 	public void addInstructionModelListener(LightKeeperCoverageInstructionModelListener listener) {
-		listeners.add(listener);
+		modelListeners.add(listener);
 	}
 	
 	public void clear() {
 		this.modelRanges = null;
 		this.hits = new HashSet<AddressRange>();
-		listeners.forEach(l -> l.instructionsChanged());
+		modelListeners.forEach(l -> l.instructionsChanged());
 	}
 	
 	public Set<AddressRange> getHits() {
