@@ -9,6 +9,7 @@ import java.util.Set;
 
 import docking.widgets.table.AbstractSortedTableModel;
 import docking.widgets.table.TableSortStateEditor;
+import docking.widgets.table.ColumnSortState.SortDirection;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressRange;
@@ -72,7 +73,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 		super();
 		this.plugin = plugin;		
 		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
-		tableSortStateEditor.addSortedColumn(0);
+		tableSortStateEditor.addSortedColumn(0, SortDirection.DESCENDING);
 		tableSortStateEditor.addSortedColumn(2);
 		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
