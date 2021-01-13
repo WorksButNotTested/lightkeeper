@@ -9,10 +9,10 @@ public class LightKeeperFraction implements Comparable<LightKeeperFraction> {
 		this.denominator = denominator;
 	}
 	
-	public double toPercentage() {
+	public double getDouble() {
 		if (this.denominator == 0)
 			return 0;
-		return (double)(this.numerator * 100) / this.denominator;
+		return (double)(this.numerator) / this.denominator;
 	}
 	
 	@Override
@@ -22,6 +22,6 @@ public class LightKeeperFraction implements Comparable<LightKeeperFraction> {
 	
 	@Override
 	public int compareTo(LightKeeperFraction other) {		
-		return Double.compare(this.toPercentage(), other.toPercentage());
+		return Double.compare(this.getDouble(), other.getDouble());
 	}
 }

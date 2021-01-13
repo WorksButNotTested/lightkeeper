@@ -16,8 +16,8 @@ public class LightKeeperCoverageModelRow {
 		this.functionSize = functionSize;			
 	}
 	
-	public double getCoverage() {
-		return this.instructions.toPercentage();
+	public LightKeeperPercentage getCoverage() {
+		return new LightKeeperPercentage(this.instructions);
 	}
 	
 	public long getAddress() {

@@ -109,11 +109,11 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 	public Object getColumnValueForRow(LightKeeperCoverageModelRow row, int columnIndex) {
 		switch(columnIndex) {
 			case 0:
-				return String.format("%.2f", row.getCoverage());
+				return row.getCoverage();
 			case 1:
 				return row.getName();
 			case 2:
-				return String.format("%x", row.getAddress());
+				return String.format("0x%x", row.getAddress());
 			case 3:
 				return row.getBlocks();
 			case 4:

@@ -85,18 +85,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
 				Component component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
 				LightKeeperCoverageModelRow modelRow = model.getModelData().get(row);
-				if (modelRow.getCoverage() == 0.0d) {					
+				double coverage = modelRow.getCoverage().getDouble();
+				if (coverage == 0.0d) {					
 					component.setForeground(Color.BLACK);
 					Font font = component.getFont();
 					Font newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(newFont);
-				} else if (modelRow.getCoverage() < 20.0d){
+				} else if (coverage < 0.20d){
 					component.setForeground(Color.BLUE);
-				} else if (modelRow.getCoverage() < 40.0d){
+				} else if (coverage < 0.40d){
 					component.setForeground(Color.GREEN);
-				} else if (modelRow.getCoverage() < 60.0d){
+				} else if (coverage < 0.60d){
 					component.setForeground(Color.YELLOW);
-				} else if (modelRow.getCoverage() < 80.0d){
+				} else if (coverage < 0.80d){
 					component.setForeground(Color.ORANGE);
 				} else {
 					component.setForeground(Color.RED);
