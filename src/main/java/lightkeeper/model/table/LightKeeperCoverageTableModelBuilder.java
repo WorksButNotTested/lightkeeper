@@ -1,16 +1,11 @@
-package lightkeeper.model;
+package lightkeeper.model.table;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
-
-import ghidra.program.database.map.AddressMap;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressRange;
@@ -27,21 +22,18 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.io.LightKeeperFile;
-import lightkeeper.io.block.LightKeeperBlockEntry;
-import lightkeeper.io.module.LightKeeperModuleEntry;
+import lightkeeper.model.LightKeeperCoverageRangeCollection;
 
-public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener {
+public class LightKeeperCoverageTableModelBuilder implements LightKeeperEventListener {
 	protected LightKeeperPlugin plugin;
 	protected FlatProgramAPI api;
 	protected TaskMonitor monitor;
-	protected LightKeeperCoverageRangeCollection file;
+	protected LightKeeperCoverageRangeCollection modelRanges;
 	
 	protected HashMap<Function, Set<AddressRange>> functions = new HashMap<Function, Set<AddressRange>>();
 	protected Set<AddressRange> unassigned = new HashSet<AddressRange>();
 	
-	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();
-	protected Set<AddressRange> hits = new HashSet<AddressRange>();
+	protected ArrayList<LightKeeperCoverageTableModelRow> rows = new ArrayList<LightKeeperCoverageTableModelRow>();
 	
 	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
 	
@@ -65,15 +57,15 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 	}
 	
 	
-	public LightKeeperCoverageModelBuilder(LightKeeperPlugin plugin) {
+	public LightKeeperCoverageTableModelBuilder(LightKeeperPlugin plugin) {
 		this.plugin = plugin;		
 	}
 	
-	public void build(TaskMonitor taskMonitor, LightKeeperCoverageRangeCollection lightKeeperFile) throws CancelledException
+	public void build(TaskMonitor taskMonitor, LightKeeperCoverageRangeCollection ranges) throws CancelledException
 	{
 		this.api = plugin.getApi();
 		this.monitor = taskMonitor;
-		this.file = lightKeeperFile;
+		this.modelRanges = ranges;
 		monitor.checkCanceled();
 		
 		this.processEntries();
@@ -85,7 +77,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 	}
 	
 	public void processEntries() throws CancelledException {
-		ArrayList<AddressRange> ranges = file.getRanges();
+		ArrayList<AddressRange> ranges = modelRanges.getRanges();
 		for (int i = 0; i < ranges.size(); i++)
 		{
 			monitor.checkCanceled();
@@ -125,7 +117,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			LightKeeperFraction instructionInfo = this.processInstructions(function, ranges);
 			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
 			
-			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), 
+			LightKeeperCoverageTableModelRow row = new LightKeeperCoverageTableModelRow(function.getName(), body.getMinAddress().getOffset(), 
 					codeBlockInfo, instructionInfo, functionSize);
 			this.rows.add(row);
 		}
@@ -188,14 +180,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 					continue;
 				
 				
-				hitInstructions++;					
-				Address instructionStart = instruction.getAddress();
-				long length = instruction.getLength();
-				if (length > 0)
-					length--;
-				Address instructionEnd = instructionStart.add(length);
-				AddressRange instructionRange = new AddressRangeImpl(instructionStart, instructionEnd);
-				this.hits.add(instructionRange);					
+				hitInstructions++;										
 			}
 		}
 		return new LightKeeperFraction(hitInstructions, instructions);
@@ -213,16 +198,12 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			Address addr = range.getMinAddress();
 			String name = String.format("_unknown_%x", addr.getOffset());
 			LightKeeperFraction zeroFraction = new LightKeeperFraction(0, 0);
-			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
+			LightKeeperCoverageTableModelRow row = new LightKeeperCoverageTableModelRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
 			this.rows.add(row);
 		}
 	}
 	
-	public ArrayList<LightKeeperCoverageModelRow> getRows() {
+	public ArrayList<LightKeeperCoverageTableModelRow> getRows() {
 		return this.rows;
-	}
-	
-	public Set<AddressRange> getHits() {
-		return this.hits;
 	}
 }

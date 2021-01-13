@@ -1,4 +1,4 @@
-package lightkeeper.model;
+package lightkeeper.model.table;
 
 public class LightKeeperFraction implements Comparable<LightKeeperFraction> {
 	protected long numerator;

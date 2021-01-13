@@ -1,20 +1,17 @@
-package lightkeeper.model;
+package lightkeeper.model.table;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import docking.widgets.table.AbstractSortedTableModel;
 import docking.widgets.table.TableSortStateEditor;
-import ghidra.program.model.address.AddressRange;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.io.LightKeeperFile;
+import lightkeeper.model.LightKeeperCoverageRangeCollection;
 
-public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeeperCoverageModelRow> implements LightKeeperEventListener {
+public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<LightKeeperCoverageTableModelRow> implements LightKeeperEventListener {
 	private String[] columnNames = {
 		"Coverage %",
 		"Function Name",
@@ -25,8 +22,8 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
     };
 
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageRangeCollection file;
-	protected LightKeeperCoverageModelBuilder builder;
+	protected LightKeeperCoverageRangeCollection modelRanges;
+	protected LightKeeperCoverageTableModelBuilder builder;
 	
 	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
 	
@@ -49,35 +46,35 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		this.listeners.forEach(l -> l.addException(exc));		
 	}
 	
-	public LightKeeperCoverageModel(LightKeeperPlugin plugin) {
+	public LightKeeperCoverageTableModel(LightKeeperPlugin plugin) {
 		super();
 		this.plugin = plugin;		
-		this.builder = new LightKeeperCoverageModelBuilder(plugin);
+		this.builder = new LightKeeperCoverageTableModelBuilder(plugin);
 		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
 		tableSortStateEditor.addSortedColumn(0);
 		tableSortStateEditor.addSortedColumn(2);
 		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 	
-	public void load(LightKeeperCoverageRangeCollection lightKeeperFile) {
-		this.file = lightKeeperFile;
+	public void load(LightKeeperCoverageRangeCollection ranges) {
+		this.modelRanges = ranges;
 	}
 
-	public void update(TaskMonitor monitor) throws CancelledException, IOException
+	public void update(TaskMonitor monitor) throws CancelledException
 	{
-		if (this.file == null)
+		if (this.modelRanges == null)
 			return;
 		
-		this.builder = new LightKeeperCoverageModelBuilder(this.plugin);
+		this.builder = new LightKeeperCoverageTableModelBuilder(this.plugin);
 		builder.addListener(this);
-		builder.build(monitor, this.file);
+		builder.build(monitor, this.modelRanges);
 		monitor.checkCanceled();		
 		fireTableDataChanged();
 	}
 	
 	public void clear() {
-		this.file = null;
-		this.builder = new LightKeeperCoverageModelBuilder(this.plugin);
+		this.modelRanges = null;
+		this.builder = new LightKeeperCoverageTableModelBuilder(this.plugin);
 		fireTableDataChanged();
 	}
 	
@@ -101,12 +98,12 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 	}
 
 	@Override
-	public List<LightKeeperCoverageModelRow> getModelData() {
+	public List<LightKeeperCoverageTableModelRow> getModelData() {
 		return this.builder.getRows();
 	}
 
 	@Override
-	public Object getColumnValueForRow(LightKeeperCoverageModelRow row, int columnIndex) {
+	public Object getColumnValueForRow(LightKeeperCoverageTableModelRow row, int columnIndex) {
 		switch(columnIndex) {
 			case 0:
 				return row.getCoverage();
@@ -124,9 +121,4 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 				throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}
 	}
-	
-	public Set<AddressRange> getHits() {
-		return this.builder.getHits();
-	}
-
 }

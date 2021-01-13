@@ -32,8 +32,8 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperController;
-import lightkeeper.model.LightKeeperCoverageModel;
-import lightkeeper.model.LightKeeperCoverageModelRow;
+import lightkeeper.model.table.LightKeeperCoverageTableModel;
+import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
 import resources.Icons;
 import resources.ResourceManager;
 
@@ -42,12 +42,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	private static File lastFile = null;
 	
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageModel model;
+	protected LightKeeperCoverageTableModel model;
 	protected LightKeeperController controller;
 	protected GTable table;
 	protected JPanel panel;
 
-	public LightKeeperProvider(LightKeeperPlugin plugin, LightKeeperController controller, LightKeeperCoverageModel model, String owner) {
+	public LightKeeperProvider(LightKeeperPlugin plugin, LightKeeperController controller, LightKeeperCoverageTableModel model, String owner) {
 		super(plugin.getTool(), owner, owner);
 		this.plugin = plugin;
 		this.controller = controller;
@@ -84,7 +84,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			@Override
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
 				Component component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
-				LightKeeperCoverageModelRow modelRow = model.getModelData().get(row);
+				LightKeeperCoverageTableModelRow modelRow = model.getModelData().get(row);
 				double coverage = modelRow.getCoverage().getDouble();
 				if (coverage == 0.0d) {					
 					component.setForeground(Color.BLACK);

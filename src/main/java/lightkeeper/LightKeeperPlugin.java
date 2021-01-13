@@ -24,7 +24,8 @@ import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
 import lightkeeper.controller.LightKeeperController;
 import lightkeeper.controller.LightKeeperDisassemblyController;
-import lightkeeper.model.LightKeeperCoverageModel;
+import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
+import lightkeeper.model.table.LightKeeperCoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
@@ -38,7 +39,8 @@ import lightkeeper.view.LightKeeperProvider;
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 
-	protected LightKeeperCoverageModel model;
+	protected LightKeeperCoverageTableModel tableModel;
+	protected LightKeeperCoverageInstructionModel instructionModel;
 	protected LightKeeperController controller;
 	protected LightKeeperDisassemblyController disassemblyController;
 	protected LightKeeperProvider provider;
@@ -47,11 +49,12 @@ public class LightKeeperPlugin extends ProgramPlugin {
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		model = new LightKeeperCoverageModel(this);
-		controller = new LightKeeperController(this, this.model);
-		model.addListener(controller);
-		disassemblyController = new LightKeeperDisassemblyController(this, this.model);		
-		provider = new LightKeeperProvider(this, this.controller,  this.model, "Light Keeper");
+		tableModel = new LightKeeperCoverageTableModel(this);
+		instructionModel = new LightKeeperCoverageInstructionModel(this);
+		controller = new LightKeeperController(this, this.tableModel, this.instructionModel);
+		tableModel.addListener(controller);
+		disassemblyController = new LightKeeperDisassemblyController(this, this.instructionModel);		
+		provider = new LightKeeperProvider(this, this.controller,  this.tableModel, "Light Keeper");
 	}
 
 	@Override

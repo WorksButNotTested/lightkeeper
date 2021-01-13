@@ -17,20 +17,38 @@ import ghidra.program.model.listing.Program;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.Swing;
 import ghidra.util.exception.CancelledException;
+import ghidra.util.task.Task;
+import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.LightKeeperFile;
 import lightkeeper.model.LightKeeperCoverageRangeCollection;
-import lightkeeper.model.LightKeeperCoverageModel;
-import lightkeeper.model.LightKeeperCoverageModelRow;
+import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
+import lightkeeper.model.instruction.LightKeeperCoverageInstructionModelListener;
+import lightkeeper.model.table.LightKeeperCoverageTableModel;
+import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
 
 public class LightKeeperController implements LightKeeperEventListener {
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageModel model;	
+	protected LightKeeperCoverageTableModel tableModel;	
+	protected LightKeeperCoverageInstructionModel instructionModel;
 	
-	public LightKeeperController(LightKeeperPlugin plugin, LightKeeperCoverageModel model) {
+	public LightKeeperController(LightKeeperPlugin plugin, LightKeeperCoverageTableModel tableModel, LightKeeperCoverageInstructionModel instructionModel) {
 		this.plugin = plugin;
-		this.model = model;
+		this.tableModel = tableModel;
+		this.instructionModel = instructionModel;
+		this.instructionModel.addInstructionModelListener(new LightKeeperCoverageInstructionModelListener() {
+			@Override
+			public void instructionsChanged() {
+				Task task = new Task("Clear Coverage Data", true, true, true){
+					@Override
+					public void run(TaskMonitor monitor) throws CancelledException {
+						colour(monitor);
+					}
+				};
+				TaskLauncher.launch(task);
+			}
+		});
 	}
 	
 	public void goTo(int row) {
@@ -38,7 +56,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		if (codeViewerService == null)
 			return;
 		
-		LightKeeperCoverageModelRow modelRow = this.model.getModelData().get(row);
+		LightKeeperCoverageTableModelRow modelRow = this.tableModel.getModelData().get(row);
 		long addr = modelRow.getAddress();
 		
 		FlatProgramAPI api = this.plugin.getApi();
@@ -65,7 +83,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			for (AddressRange range: model.getHits())
+			for (AddressRange range: instructionModel.getHits())
 			{
 				monitor.checkCanceled();
 				Address min = range.getMinAddress();
@@ -123,8 +141,10 @@ public class LightKeeperController implements LightKeeperEventListener {
 			coverageFile.read(monitor, dataFile);
 			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
-			this.model.load(coverageFile);
-			this.model.update(monitor);
+			this.tableModel.load(coverageFile);
+			this.tableModel.update(monitor);
+			this.instructionModel.load(coverageFile);
+			this.instructionModel.update(monitor);
 			this.addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
@@ -139,7 +159,8 @@ public class LightKeeperController implements LightKeeperEventListener {
 		monitor.setMessage("Clearing");
 		this.addMessage("Clearing");		
 		monitor.setProgress(0);
-		this.model.clear();
+		this.tableModel.clear();
+		this.instructionModel.clear();
 		this.addMessage("Completed");
 		monitor.setProgress(100);
 	}
@@ -148,13 +169,10 @@ public class LightKeeperController implements LightKeeperEventListener {
 		monitor.checkCanceled();
 		monitor.setMessage("Refreshing");
 		this.addMessage("Refreshing");
-		try {			
-			monitor.setProgress(0);
-			this.model.update(monitor);			
-			this.addMessage("Completed");
-			monitor.setProgress(100);
-		} catch (IOException e) {
-			this.addException(e);
-		}
+		monitor.setProgress(0);
+		this.tableModel.update(monitor);	
+		this.instructionModel.update(monitor);	
+		this.addMessage("Completed");
+		monitor.setProgress(100);
 	}	
 }

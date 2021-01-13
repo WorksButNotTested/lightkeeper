@@ -1,4 +1,4 @@
-package lightkeeper.model;
+package lightkeeper.model.table;
 
 public class LightKeeperPercentage extends LightKeeperFraction{
 	public LightKeeperPercentage(LightKeeperFraction fraction) {

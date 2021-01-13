@@ -1,6 +1,6 @@
-package lightkeeper.model;
+package lightkeeper.model.table;
 
-public class LightKeeperCoverageModelRow {
+public class LightKeeperCoverageTableModelRow {
 	protected String name;
 	protected long address;
 	protected LightKeeperFraction blocks;
@@ -8,7 +8,7 @@ public class LightKeeperCoverageModelRow {
 	protected long functionSize;
 	
 	
-	public LightKeeperCoverageModelRow (String name, long address, LightKeeperFraction blocks, LightKeeperFraction instructions, long functionSize) {
+	public LightKeeperCoverageTableModelRow (String name, long address, LightKeeperFraction blocks, LightKeeperFraction instructions, long functionSize) {
 		this.name = name;
 		this.address = address;
 		this.blocks = blocks;

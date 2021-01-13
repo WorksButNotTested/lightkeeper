@@ -22,20 +22,21 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.model.LightKeeperCoverageModel;
+import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
+import lightkeeper.model.instruction.LightKeeperCoverageInstructionModelListener;
 
 @SuppressWarnings("deprecation")
 public class LightKeeperDisassemblyController {
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageModel model;	
+	protected LightKeeperCoverageInstructionModel model;	
 	
-	public LightKeeperDisassemblyController(LightKeeperPlugin plugin, LightKeeperCoverageModel model) {
+	public LightKeeperDisassemblyController(LightKeeperPlugin plugin, LightKeeperCoverageInstructionModel model) {
 		this.plugin = plugin;
 		this.model = model;
 		
-		this.model.addTableModelListener(new TableModelListener() {
+		this.model.addInstructionModelListener(new LightKeeperCoverageInstructionModelListener() {
 			@Override
-			public void tableChanged(TableModelEvent arg0) {
+			public void instructionsChanged() {
 				modelChanged();				
 			}
 		});			
