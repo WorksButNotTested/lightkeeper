@@ -1,0 +1,63 @@
+name: Ghidra Extension Build
+
+env:
+  ghidra-url: https://ghidra-sre.org/ghidra_9.2.1_PUBLIC_20201215.zip
+  ghidra-zip-filename: ghidra_9.2.1_PUBLIC.zip
+  ghidra-directory: ghidra_9.2.1_PUBLIC
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+      
+    - name: Download Ghidra release
+      uses: carlosperate/download-file-action@v1.0.3
+      id: download-ghidra
+      with:
+        file-url: ${{ env.ghidra-url }}
+        file-name: ${{ env.ghidra-zip-filename }}
+
+    - name: Build
+      shell: bash
+      run: |
+        pwd
+        unzip -qq ${{ steps.download-ghidra.outputs.file-path }} -d /opt
+        rm -v ${{ env.ghidra-zip-filename }}
+        rm -rfv test_data
+        gradle -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
+        mv -v dist/*.zip ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Created by GitHub Action
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+        asset_name: lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+        asset_content_type: application/zip
