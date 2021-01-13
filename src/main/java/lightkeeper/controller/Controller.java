@@ -22,29 +22,24 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.DynamoRioFile;
-import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.CoverageFileRanges;
+import lightkeeper.model.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.model.table.CoverageTableRow;
 
-public class Controller implements EventListener {
+public class Controller implements IEventListener, ICoverageModelListener {
 	protected LightKeeperPlugin plugin;
+	protected CoverageModel model;	
 	protected CoverageTableModel tableModel;	
 	protected CoverageInstructionModel instructionModel;
 	
-	public Controller(LightKeeperPlugin plugin, CoverageTableModel tableModel, CoverageInstructionModel instructionModel) {
+	public Controller(LightKeeperPlugin plugin, CoverageModel model, CoverageTableModel tableModel, CoverageInstructionModel instructionModel) {
 		this.plugin = plugin;
+		this.model = model;
 		this.tableModel = tableModel;
 		this.instructionModel = instructionModel;
-		tableModel.addListener(this);
-		instructionModel.addListener(this);
-		this.instructionModel.addModelListener(new CoverageModelListener() {
-			@Override
-			public void modelChanged(TaskMonitor monitor) throws CancelledException {
-				colour(monitor);
-			}
-		});
 	}
 	
 	public void goTo(int row) {
@@ -79,7 +74,7 @@ public class Controller implements EventListener {
 		int transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			for (AddressRange range: instructionModel.getHits())
+			for (AddressRange range: instructionModel.getModelData())
 			{
 				monitor.checkCanceled();
 				Address min = range.getMinAddress();
@@ -137,10 +132,8 @@ public class Controller implements EventListener {
 			coverageFile.read(monitor, dataFile);
 			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
-			this.tableModel.load(coverageFile);
-			this.tableModel.update(monitor);
-			this.instructionModel.load(coverageFile);
-			this.instructionModel.update(monitor);
+			this.model.load(coverageFile);
+			this.model.update(monitor);
 			this.addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
@@ -155,8 +148,7 @@ public class Controller implements EventListener {
 		monitor.setMessage("Clearing");
 		this.addMessage("Clearing");		
 		monitor.setProgress(0);
-		this.tableModel.clear(monitor);
-		this.instructionModel.clear(monitor);
+		this.model.clear(monitor);
 		this.addMessage("Completed");
 		monitor.setProgress(100);
 	}
@@ -166,9 +158,13 @@ public class Controller implements EventListener {
 		monitor.setMessage("Refreshing");
 		this.addMessage("Refreshing");
 		monitor.setProgress(0);
-		this.tableModel.update(monitor);	
-		this.instructionModel.update(monitor);	
+		this.model.update(monitor);
 		this.addMessage("Completed");
 		monitor.setProgress(100);
+	}
+
+	@Override
+	public void modelChanged(TaskMonitor monitor) throws CancelledException {
+		colour(monitor);
 	}	
 }

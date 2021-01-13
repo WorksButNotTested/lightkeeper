@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import docking.widgets.table.AbstractSortedTableModel;
@@ -24,14 +23,16 @@ import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.EventListener;
-import lightkeeper.model.CoverageModelListener;
+import lightkeeper.controller.IEventListener;
+import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.CoverageFileRanges;
+import lightkeeper.model.CoverageModel;
+import lightkeeper.model.ICoverageModel;
 
-public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements EventListener {	
-	private List<EventListener> listeners = new ArrayList<EventListener>();
+public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<CoverageFileRanges, ArrayList<CoverageTableRow>>, ICoverageModelListener {	
+	private ArrayList<IEventListener> listeners = new ArrayList<IEventListener>();
 	
-	public void addListener(EventListener listener) {
+	public void addListener(IEventListener listener) {
 		this.listeners.add(listener);
 	}
 	
@@ -50,9 +51,9 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 		this.listeners.forEach(l -> l.addException(exc));		
 	}
 	
-	protected ArrayList<CoverageModelListener> modelListeners = new ArrayList<CoverageModelListener>();
+	protected ArrayList<ICoverageModelListener> modelListeners = new ArrayList<ICoverageModelListener>();
 	
-	public void addModelListener(CoverageModelListener listener) {
+	public void addModelListener(ICoverageModelListener listener) {
 		modelListeners.add(listener);
 	}
 	
@@ -66,12 +67,14 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
     };
 
 	protected LightKeeperPlugin plugin;
+	protected CoverageModel coverage;
 	protected CoverageFileRanges modelRanges;
 	protected ArrayList<CoverageTableRow> rows = new ArrayList<CoverageTableRow>();
 	
-	public CoverageTableModel(LightKeeperPlugin plugin) {
+	public CoverageTableModel(LightKeeperPlugin plugin, CoverageModel coverage) {
 		super();
 		this.plugin = plugin;		
+		this.coverage = coverage;
 		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
 		tableSortStateEditor.addSortedColumn(0, SortDirection.DESCENDING);
 		tableSortStateEditor.addSortedColumn(2);
@@ -240,7 +243,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 	
 	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
 		this.fireTableDataChanged();
-		for (CoverageModelListener listener: this.modelListeners) {
+		for (ICoverageModelListener listener: this.modelListeners) {
 			listener.modelChanged(monitor);
 		}
 	}
@@ -265,7 +268,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 	}
 
 	@Override
-	public List<CoverageTableRow> getModelData() {
+	public ArrayList<CoverageTableRow> getModelData() {
 		return this.rows;
 	}
 
@@ -287,5 +290,12 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 			default:
 				throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}
+	}
+
+	@Override
+	public void modelChanged(TaskMonitor monitor) throws CancelledException {
+		CoverageFileRanges ranges = this.coverage.getModelData();
+		this.load(ranges);
+		this.update(monitor);
 	}
 }

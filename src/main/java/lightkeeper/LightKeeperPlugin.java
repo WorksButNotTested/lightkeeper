@@ -24,6 +24,7 @@ import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
 import lightkeeper.controller.Controller;
 import lightkeeper.controller.DisassemblyController;
+import lightkeeper.model.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
@@ -38,7 +39,7 @@ import lightkeeper.view.LightKeeperProvider;
 )
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
-
+	protected CoverageModel coverageModel;
 	protected CoverageTableModel tableModel;
 	protected CoverageInstructionModel instructionModel;
 	protected Controller controller;
@@ -49,9 +50,15 @@ public class LightKeeperPlugin extends ProgramPlugin {
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		tableModel = new CoverageTableModel(this);
-		instructionModel = new CoverageInstructionModel(this);
-		controller = new Controller(this, this.tableModel, this.instructionModel);
+		coverageModel = new CoverageModel(this);
+		tableModel = new CoverageTableModel(this, coverageModel);
+		instructionModel = new CoverageInstructionModel(this, coverageModel);
+		coverageModel.addModelListener(tableModel);
+		coverageModel.addModelListener(instructionModel);
+		controller = new Controller(this, this.coverageModel, this.tableModel, this.instructionModel);
+		tableModel.addListener(controller);
+		instructionModel.addListener(controller);
+		instructionModel.addModelListener(controller);
 		disassemblyController = new DisassemblyController(this, this.instructionModel);		
 		provider = new LightKeeperProvider(this, this.controller,  this.tableModel, "Light Keeper");
 	}

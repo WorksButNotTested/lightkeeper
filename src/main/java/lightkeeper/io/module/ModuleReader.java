@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.controller.EventListener;
+import lightkeeper.controller.IEventListener;
 import lightkeeper.io.BinaryLineReader;
 
 public class ModuleReader {
@@ -32,7 +32,7 @@ public class ModuleReader {
 	protected final String COLUMN_4_HDR_LINUX = "Columns: id, containing_id, start, end, entry, offset, path";
 	protected final Pattern COLUMN_4_HDR_LINUX_FMT = Pattern.compile("^\\s*(?<id>\\d+), \\s*(?<containingid>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<offset>[0-9a-fA-F]+), (?<path>.+)$");
 	
-	private List<EventListener> listeners = new ArrayList<EventListener>();
+	private List<IEventListener> listeners = new ArrayList<IEventListener>();
 	protected TaskMonitor monitor;
 	protected BinaryLineReader reader;
 	protected String columnHeader;
@@ -80,7 +80,7 @@ public class ModuleReader {
 			throw new IOException (String.format("Unsupported pattern: '%s'", formats.get(0).header));
 	}
 	
-	public void addListener(EventListener listener) {
+	public void addListener(IEventListener listener) {
 		this.listeners.add(listener);
 	}
 	

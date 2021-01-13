@@ -19,7 +19,7 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 
 @SuppressWarnings("deprecation")
@@ -31,7 +31,7 @@ public class DisassemblyController {
 		this.plugin = plugin;
 		this.model = model;
 		
-		this.model.addModelListener(new CoverageModelListener() {
+		this.model.addModelListener(new ICoverageModelListener() {
 			@Override
 			public void modelChanged(TaskMonitor monitor) throws CancelledException {
 				instructionModelChanged(monitor);				
@@ -76,7 +76,7 @@ public class DisassemblyController {
 				Address address = DecompilerUtils.getClosestAddress(program, token);
 				if (address == null)
 					continue;
-				for (AddressRange range: model.getHits())
+				for (AddressRange range: model.getModelData())
 				{
 					monitor.checkCanceled();
 					if (!range.contains(address))

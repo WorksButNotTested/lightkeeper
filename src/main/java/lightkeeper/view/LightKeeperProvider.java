@@ -32,13 +32,13 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.Controller;
-import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.model.table.CoverageTableRow;
 import resources.Icons;
 import resources.ResourceManager;
 
-public class LightKeeperProvider extends ComponentProvider implements CoverageModelListener {
+public class LightKeeperProvider extends ComponentProvider implements ICoverageModelListener {
 
 	private static File lastFile = null;
 	

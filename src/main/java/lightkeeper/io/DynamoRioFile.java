@@ -12,13 +12,13 @@ import java.util.stream.Stream;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.controller.EventListener;
+import lightkeeper.controller.IEventListener;
 import lightkeeper.io.block.BlockEntry;
 import lightkeeper.io.block.BlockReader;
 import lightkeeper.io.module.ModuleEntry;
 import lightkeeper.io.module.ModuleReader;
 
-public class DynamoRioFile implements EventListener {		
+public class DynamoRioFile implements IEventListener {		
 	protected final String HEADER = "DRCOV VERSION: 2";
 	protected final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
 	protected final Pattern TABLE_REGEX = Pattern.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
@@ -33,7 +33,7 @@ public class DynamoRioFile implements EventListener {
 	protected ArrayList<ModuleEntry> modules = new ArrayList<ModuleEntry>();
 	protected long blockCount;
 	protected ArrayList<BlockEntry> blocks = new ArrayList<BlockEntry>();
-	private List<EventListener> listeners = new ArrayList<EventListener>();
+	private List<IEventListener> listeners = new ArrayList<IEventListener>();
 	
 	public DynamoRioFile (File file) throws IOException {		
 		FileInputStream stream = new FileInputStream(file);
@@ -50,7 +50,7 @@ public class DynamoRioFile implements EventListener {
 		this.readBlocks(monitor);
 	}
 	
-	public void addListener(EventListener listener) {
+	public void addListener(IEventListener listener) {
 		this.listeners.add(listener);
 	}
 	

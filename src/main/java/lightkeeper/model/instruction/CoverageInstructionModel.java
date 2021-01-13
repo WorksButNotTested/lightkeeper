@@ -1,9 +1,6 @@
 package lightkeeper.model.instruction;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
@@ -15,51 +12,28 @@ import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.EventListener;
-import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.ICoverageModelListener;
+import lightkeeper.model.AbstractCoverageModel;
 import lightkeeper.model.CoverageFileRanges;
+import lightkeeper.model.CoverageModel;
 
-public class CoverageInstructionModel implements EventListener {
-	private List<EventListener> eventListeners = new ArrayList<EventListener>();
-	
-	public void addListener(EventListener listener) {
-		this.eventListeners.add(listener);
-	}
-	
-	@Override
-	public void addMessage(String message) {
-		this.eventListeners.forEach(l -> l.addMessage(message));
-	}
-	
-	@Override
-	public void addErrorMessage(String message) {
-		this.eventListeners.forEach(l -> l.addErrorMessage(message));
-	}
-
-	@Override
-	public void addException(Exception exc) {
-		this.eventListeners.forEach(l -> l.addException(exc));		
-	}
-	
-	protected ArrayList<CoverageModelListener> modelListeners = new ArrayList<CoverageModelListener>();
-	
-	public void addModelListener(CoverageModelListener listener) {
-		modelListeners.add(listener);
-	}
-	
-	protected LightKeeperPlugin plugin;
+public class CoverageInstructionModel extends AbstractCoverageModel<CoverageFileRanges, HashSet<AddressRange>> implements ICoverageModelListener {
+	protected CoverageModel coverage;
 	protected CoverageFileRanges modelRanges;
-	protected Set<AddressRange> hits = new HashSet<AddressRange>();
+	protected HashSet<AddressRange> hits = new HashSet<AddressRange>();
 	
 	
-	public CoverageInstructionModel(LightKeeperPlugin plugin) {
-		this.plugin = plugin;	
+	public CoverageInstructionModel(LightKeeperPlugin plugin, CoverageModel coverage) {
+		super(plugin);
+		this.coverage = coverage;
 	}
 	
+	@Override
 	public void load(CoverageFileRanges ranges) {
 		this.modelRanges = ranges;
 	}
 
+	@Override
 	public void update(TaskMonitor monitor) throws CancelledException
 	{
 		this.hits = new HashSet<AddressRange>();
@@ -90,19 +64,22 @@ public class CoverageInstructionModel implements EventListener {
 		this.notifyUpdate(monitor);
 	}
 	
+	@Override
 	public void clear(TaskMonitor monitor) throws CancelledException {
 		this.modelRanges = null;
 		this.hits = new HashSet<AddressRange>();
 		this.notifyUpdate(monitor);
 	}
 	
-	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
-		for (CoverageModelListener listener: this.modelListeners) {
-			listener.modelChanged(monitor);
-		}
-	}
-	
-	public Set<AddressRange> getHits() {
+	@Override
+	public HashSet<AddressRange> getModelData() {
 		return this.hits;
 	} 
+	
+	@Override
+	public void modelChanged(TaskMonitor monitor) throws CancelledException {
+		CoverageFileRanges ranges = this.coverage.getModelData();
+		this.load(ranges);
+		this.update(monitor);
+	}
 }

@@ -6,21 +6,21 @@ import java.util.List;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.controller.EventListener;
+import lightkeeper.controller.IEventListener;
 import lightkeeper.io.BinaryLineReader;
 
-public class BlockReader implements EventListener {	
+public class BlockReader implements IEventListener {	
 	protected TaskMonitor monitor;
 	protected BinaryLineReader reader;
 	
-	private List<EventListener> listeners = new ArrayList<EventListener>();
+	private List<IEventListener> listeners = new ArrayList<IEventListener>();
 	
 	public BlockReader(TaskMonitor monitor, BinaryLineReader reader) {		
 		this.monitor = monitor;
 		this.reader = reader;
 	}
 	
-	public void addListener(EventListener listener) {
+	public void addListener(IEventListener listener) {
 		this.listeners.add(listener);
 	}
 	
