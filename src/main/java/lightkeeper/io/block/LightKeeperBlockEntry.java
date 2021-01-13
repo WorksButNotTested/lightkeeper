@@ -33,16 +33,6 @@ public class LightKeeperBlockEntry {
 		return this.module;
 	}
 	
-	public boolean contains(long rangeStart, long rangeEnd) {
-		if (rangeStart < this.getStart())
-			return false;
-		
-		if (rangeEnd > this.getEnd())
-			return false;
-		
-		return true;
-	}
-	
 	@Override
     public boolean equals(Object o) {    
         if (o == this) { 

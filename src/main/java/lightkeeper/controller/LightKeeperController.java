@@ -10,6 +10,7 @@ import ghidra.app.services.ConsoleService;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressFactory;
+import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.listing.Program;
@@ -19,6 +20,7 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.LightKeeperFile;
+import lightkeeper.model.LightKeeperCoverageRangeCollection;
 import lightkeeper.model.LightKeeperCoverageModel;
 import lightkeeper.model.LightKeeperCoverageModelRow;
 
@@ -117,12 +119,17 @@ public class LightKeeperController implements LightKeeperEventListener {
 			dataFile.addListener(this);
 			dataFile.read(monitor);
 			
+			LightKeeperCoverageRangeCollection coverageFile = new LightKeeperCoverageRangeCollection(plugin);
+			coverageFile.read(monitor, dataFile);
+			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
-			this.model.load(dataFile);
+			this.model.load(coverageFile);
 			this.model.update(monitor);
 			this.addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
+			this.addException(e);
+		} catch (AddressOverflowException e) {
 			this.addException(e);
 		}
 	}

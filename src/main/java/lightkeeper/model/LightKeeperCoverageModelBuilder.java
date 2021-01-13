@@ -35,11 +35,10 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 	protected LightKeeperPlugin plugin;
 	protected FlatProgramAPI api;
 	protected TaskMonitor monitor;
-	protected LightKeeperFile file;
+	protected LightKeeperCoverageRangeCollection file;
 	
-	protected HashMap<Integer, LightKeeperModuleEntry> modules;
-	protected HashMap<Function, Set<LightKeeperBlockEntry>> functions = new HashMap<Function, Set<LightKeeperBlockEntry>>();
-	protected Set<LightKeeperBlockEntry> unassigned = new HashSet<LightKeeperBlockEntry>();
+	protected HashMap<Function, Set<AddressRange>> functions = new HashMap<Function, Set<AddressRange>>();
+	protected Set<AddressRange> unassigned = new HashSet<AddressRange>();
 	
 	protected ArrayList<LightKeeperCoverageModelRow> rows = new ArrayList<LightKeeperCoverageModelRow>();
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
@@ -70,14 +69,11 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		this.plugin = plugin;		
 	}
 	
-	public void build(TaskMonitor taskMonitor, LightKeeperFile lightKeeperFile) throws CancelledException, IOException
+	public void build(TaskMonitor taskMonitor, LightKeeperCoverageRangeCollection lightKeeperFile) throws CancelledException
 	{
 		this.api = plugin.getApi();
 		this.monitor = taskMonitor;
 		this.file = lightKeeperFile;
-		
-		monitor.checkCanceled();		
-		this.modules = this.getModules();
 		monitor.checkCanceled();
 		
 		this.processEntries();
@@ -88,59 +84,26 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		monitor.checkCanceled();		
 	}
 	
-	public HashMap<Integer, LightKeeperModuleEntry> getModules () throws CancelledException, IOException {
-		HashMap<Integer, LightKeeperModuleEntry> selectedModules = new HashMap<Integer, LightKeeperModuleEntry>();
-		File programFile = api.getProgramFile();
-		String programFileName = programFile.getName();
-		this.addMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
-		monitor.setMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
-		
-		ArrayList<LightKeeperModuleEntry> fileModules = file.getModules();
-		for (int i = 0; i < fileModules.size(); i++) {
-			monitor.checkCanceled();
-			LightKeeperModuleEntry currentModule = fileModules.get(i);
-			File f = new File(currentModule.getPath());
-			String fileName = f.getName();
-			if (fileName.equals(programFileName)) {
-				selectedModules.put(currentModule.getId(), currentModule);
-			}
-		}
-		
-		if (selectedModules.size() == 0)
-			throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
-		
-		return selectedModules;
-	}
-	
-	public void processEntries() throws CancelledException, IOException {
-		AddressMap addressMap = api.getCurrentProgram().getAddressMap();
-		Address baseAddress = addressMap.getImageBase();
-		this.addMessage(String.format("Base address: %x", baseAddress.getOffset()));
-		
-		ArrayList<LightKeeperBlockEntry> blocks = file.getBlocks();
-		for (int i = 0; i < blocks.size(); i++)
+	public void processEntries() throws CancelledException {
+		ArrayList<AddressRange> ranges = file.getRanges();
+		for (int i = 0; i < ranges.size(); i++)
 		{
 			monitor.checkCanceled();
-			monitor.setMessage(String.format("Processing block %d / %d", i, blocks.size()));
-			LightKeeperBlockEntry block = blocks.get(i);
-			int moduleId = block.getModule();
+			monitor.setMessage(String.format("Processing block %d / %d", i, ranges.size()));
+			AddressRange range = ranges.get(i);
 			
-			if (!this.modules.containsKey(moduleId))
-				continue;
-			
-			Address addr = baseAddress.add(block.getStart());
-			Function function = api.getFunctionContaining(addr);
+			Function function = api.getFunctionContaining(range.getMinAddress());
 			if (function == null) {
-				this.addMessage(String.format("No function found at: %x", addr.getOffset()));
-				unassigned.add(block);
+				this.addMessage(String.format("No function found at: %x", range.getMinAddress().getOffset()));
+				unassigned.add(range);
 			} else {
-				this.addMessage(String.format("Found function: '%s' at: %x", function.getName(), addr.getOffset()));
-				Set<LightKeeperBlockEntry> set = functions.get(function);
+				this.addMessage(String.format("Found function: '%s' at: %x", function.getName(), range.getMinAddress().getOffset()));
+				Set<AddressRange> set = functions.get(function);
 				if (set == null) {
-					set = new HashSet<LightKeeperBlockEntry>();
+					set = new HashSet<AddressRange>();
 					functions.put(function, set);
 				}
-				set.add(block);
+				set.add(range);
 			}
 		}	
 	}
@@ -156,10 +119,10 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
 			this.addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
 			AddressSetView body = function.getBody();
-			Set<LightKeeperBlockEntry> blocks = functions.get(function);
+			Set<AddressRange> ranges = functions.get(function);
 			
-			LightKeeperFraction codeBlockInfo = this.processCodeBlocks(function, blocks);
-			LightKeeperFraction instructionInfo = this.processInstructions(function, blocks);
+			LightKeeperFraction codeBlockInfo = this.processCodeBlocks(function, ranges);
+			LightKeeperFraction instructionInfo = this.processInstructions(function, ranges);
 			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
 			
 			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(function.getName(), body.getMinAddress().getOffset(), 
@@ -168,8 +131,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		}
 	}
 	
-	public LightKeeperFraction processCodeBlocks(Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {		
-		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+	public LightKeeperFraction processCodeBlocks(Function function, Set<AddressRange> ranges) throws CancelledException {		
 		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
 		AddressSetView body = function.getBody();
 		CodeBlockIterator codeBlockIterator = bbm.getCodeBlocksContaining(body, monitor);
@@ -183,23 +145,25 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			this.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
 			
 			CodeBlock cb = codeBlockIterator.next();
-			long start = cb.getMinAddress().subtract(baseAddress);
-			long end = cb.getMaxAddress().subtract(baseAddress);
 			
-			Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();				
-			while (blockIterator.hasNext()) {			
+			Iterator<AddressRange> rangeIterator = ranges.iterator();				
+			while (rangeIterator.hasNext()) {			
 				monitor.checkCanceled();
 				
-				LightKeeperBlockEntry block = blockIterator.next();
-				if (block.contains(start, end))
-					hitCodeBlocks++;								
+				AddressRange range = rangeIterator.next();
+				if (range.getMinAddress().compareTo(cb.getMinAddress()) < 0)
+					continue;
+				
+				if (range.getMaxAddress().compareTo(cb.getMaxAddress()) > 0)
+					continue;
+				
+				hitCodeBlocks++;								
 			}
 		}
 		return new LightKeeperFraction(hitCodeBlocks, codeBlocks);
 	}
 	
-	public LightKeeperFraction processInstructions(Function function, Set<LightKeeperBlockEntry> blocks) throws CancelledException {		
-		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+	public LightKeeperFraction processInstructions(Function function, Set<AddressRange> ranges) throws CancelledException {		
 		Listing listing = api.getCurrentProgram().getListing();
 		AddressSetView body = function.getBody();
 		InstructionIterator instructionIterator = listing.getInstructions(body, true);
@@ -212,38 +176,41 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			this.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
 			
 			Instruction instruction = instructionIterator.next();
-			Iterator<LightKeeperBlockEntry> blockIterator = blocks.iterator();
-			while (blockIterator.hasNext()) {
+			Iterator<AddressRange> rangeIterator = ranges.iterator();
+			while (rangeIterator.hasNext()) {
 				monitor.checkCanceled();
-				LightKeeperBlockEntry block = blockIterator.next();
-				long start = instruction.getMinAddress().subtract(baseAddress);
-				long end = instruction.getMaxAddress().subtract(baseAddress);
-				if (block.contains(start, end)) {
-					hitInstructions++;					
-					Address instructionStart = instruction.getAddress();
-					long length = instruction.getLength();
-					if (length > 0)
-						length--;
-					Address instructionEnd = instructionStart.add(length);
-					AddressRange range = new AddressRangeImpl(instructionStart, instructionEnd);
-					this.hits.add(range);					
-				}
+				AddressRange range = rangeIterator.next();
+				
+				if (instruction.getMinAddress().compareTo(range.getMinAddress()) < 0)
+					continue;
+				
+				if (instruction.getMaxAddress().compareTo(range.getMaxAddress()) > 0)
+					continue;
+				
+				
+				hitInstructions++;					
+				Address instructionStart = instruction.getAddress();
+				long length = instruction.getLength();
+				if (length > 0)
+					length--;
+				Address instructionEnd = instructionStart.add(length);
+				AddressRange instructionRange = new AddressRangeImpl(instructionStart, instructionEnd);
+				this.hits.add(instructionRange);					
 			}
 		}
 		return new LightKeeperFraction(hitInstructions, instructions);
 	}
 	
 	public void processUnassigned() throws CancelledException {		
-		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
-		Iterator<LightKeeperBlockEntry> iterator = unassigned.iterator();
+		Iterator<AddressRange> iterator = unassigned.iterator();
 		int i = 0;
 		while (iterator.hasNext()) {
 			i++;
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
 			this.addMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
-			LightKeeperBlockEntry block = iterator.next();
-			Address addr = baseAddress.add(block.getStart());
+			AddressRange range = iterator.next();
+			Address addr = range.getMinAddress();
 			String name = String.format("_unknown_%x", addr.getOffset());
 			LightKeeperFraction zeroFraction = new LightKeeperFraction(0, 0);
 			LightKeeperCoverageModelRow row = new LightKeeperCoverageModelRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);

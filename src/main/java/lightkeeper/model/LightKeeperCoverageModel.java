@@ -25,7 +25,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
     };
 
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperFile file;
+	protected LightKeeperCoverageRangeCollection file;
 	protected LightKeeperCoverageModelBuilder builder;
 	
 	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
@@ -59,7 +59,7 @@ public class LightKeeperCoverageModel extends AbstractSortedTableModel<LightKeep
 		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 	
-	public void load(LightKeeperFile lightKeeperFile) {
+	public void load(LightKeeperCoverageRangeCollection lightKeeperFile) {
 		this.file = lightKeeperFile;
 	}
 
