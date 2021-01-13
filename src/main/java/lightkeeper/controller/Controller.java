@@ -7,7 +7,6 @@ import java.io.IOException;
 import ghidra.app.plugin.core.colorizer.ColorizingService;
 import ghidra.app.services.CodeViewerService;
 import ghidra.app.services.ConsoleService;
-import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.model.address.AddressRange;
 import ghidra.program.util.ProgramLocation;
 import ghidra.util.Swing;
@@ -15,10 +14,9 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.file.DynamoRioFile;
-import lightkeeper.model.CoverageModel;
 import lightkeeper.model.ICoverageModelListener;
+import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
-import lightkeeper.model.ranges.CoverageFileRanges;
 import lightkeeper.model.table.CoverageTableModel;
 
 public class Controller implements IEventListener, ICoverageModelListener {
@@ -129,17 +127,12 @@ public class Controller implements IEventListener, ICoverageModelListener {
 			dataFile.addListener(this);
 			dataFile.read(monitor);
 
-			var coverageFile = new CoverageFileRanges(plugin);
-			coverageFile.read(monitor, dataFile);
-
 			addMessage(String.format("Imported: %s",file.getAbsolutePath()));
-			model.load(coverageFile);
+			model.load(dataFile);
 			model.update(monitor);
 			addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
-			addException(e);
-		} catch (AddressOverflowException e) {
 			addException(e);
 		}
 	}

@@ -15,12 +15,11 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.IEventListener;
-import lightkeeper.model.CoverageModel;
 import lightkeeper.model.ICoverageModel;
 import lightkeeper.model.ICoverageModelListener;
-import lightkeeper.model.ranges.CoverageFileRanges;
+import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<CoverageFileRanges, ArrayList<CoverageTableRow>>, ICoverageModelListener {
+public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<HashSet<AddressRange>, ArrayList<CoverageTableRow>>, ICoverageModelListener {
 	private ArrayList<IEventListener> listeners = new ArrayList<>();
 
 	public void addListener(IEventListener listener) {
@@ -60,7 +59,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 
 	protected LightKeeperPlugin plugin;
 	protected CoverageModel coverage;
-	protected CoverageFileRanges modelRanges;
+	protected ArrayList<AddressRange> modelRanges;
 	protected ArrayList<CoverageTableRow> rows = new ArrayList<>();
 
 	public CoverageTableModel(LightKeeperPlugin plugin, CoverageModel coverage) {
@@ -73,8 +72,8 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 	}
 
 	@Override
-	public void load(CoverageFileRanges ranges) {
-		modelRanges = ranges;
+	public void load(HashSet<AddressRange> ranges) {
+		modelRanges = new ArrayList<>(ranges);
 	}
 
 	@Override
@@ -99,12 +98,11 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 		var functions = new HashMap<Function, Set<AddressRange>>();
 		Set<AddressRange> unassigned = new HashSet<>();
 		var api = plugin.getApi();
-		var ranges = modelRanges.getRanges();
-		for (var i = 0; i < ranges.size(); i++)
+		for (var i = 0; i < modelRanges.size(); i++)
 		{
 			monitor.checkCanceled();
-			monitor.setMessage(String.format("Processing block %d / %d", i, ranges.size()));
-			var range = ranges.get(i);
+			monitor.setMessage(String.format("Processing block %d / %d", i, modelRanges.size()));
+			var range = modelRanges.get(i);
 
 			var function = api.getFunctionContaining(range.getMinAddress());
 			if (function == null) {

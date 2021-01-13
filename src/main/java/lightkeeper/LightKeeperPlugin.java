@@ -24,7 +24,7 @@ import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
 import lightkeeper.controller.Controller;
 import lightkeeper.controller.DisassemblyController;
-import lightkeeper.model.CoverageModel;
+import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;

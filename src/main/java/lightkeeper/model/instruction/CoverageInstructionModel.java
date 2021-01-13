@@ -8,13 +8,12 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.model.AbstractCoverageModel;
-import lightkeeper.model.CoverageModel;
 import lightkeeper.model.ICoverageModelListener;
-import lightkeeper.model.ranges.CoverageFileRanges;
+import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageInstructionModel extends AbstractCoverageModel<CoverageFileRanges, HashSet<AddressRange>> implements ICoverageModelListener {
+public class CoverageInstructionModel extends AbstractCoverageModel<HashSet<AddressRange>, HashSet<AddressRange>> implements ICoverageModelListener {
 	protected CoverageModel coverage;
-	protected CoverageFileRanges modelRanges;
+	protected HashSet<AddressRange> modelRanges;
 	protected HashSet<AddressRange> hits = new HashSet<>();
 
 
@@ -24,7 +23,7 @@ public class CoverageInstructionModel extends AbstractCoverageModel<CoverageFile
 	}
 
 	@Override
-	public void load(CoverageFileRanges ranges) {
+	public void load(HashSet<AddressRange> ranges) {
 		modelRanges = ranges;
 	}
 
@@ -39,7 +38,7 @@ public class CoverageInstructionModel extends AbstractCoverageModel<CoverageFile
 		var api = plugin.getApi();
 		var listing = api.getCurrentProgram().getListing();
 
-		for(AddressRange range: modelRanges.getRanges()) {
+		for(AddressRange range: modelRanges) {
 			monitor.checkCanceled();
 			var iterator = listing.getInstructions(range.getMinAddress(), true);
 			while (iterator.hasNext()) {

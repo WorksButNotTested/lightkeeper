@@ -6,7 +6,6 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.IEventListener;
-import lightkeeper.model.ranges.CoverageFileRanges;
 
 public abstract class AbstractCoverageModel<T,U> implements ICoverageModel<T, U> {
 
@@ -53,7 +52,8 @@ public abstract class AbstractCoverageModel<T,U> implements ICoverageModel<T, U>
 		}
 	}
 
-	public abstract void load(CoverageFileRanges ranges);
+	@Override
+	public abstract void load(T ranges);
 
 	@Override
 	public abstract void update(TaskMonitor monitor) throws CancelledException;
@@ -61,6 +61,4 @@ public abstract class AbstractCoverageModel<T,U> implements ICoverageModel<T, U>
 	@Override
 	public abstract U getModelData();
 
-	@Override
-	public abstract void load(T data);
 }
