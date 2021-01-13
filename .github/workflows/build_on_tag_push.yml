@@ -34,7 +34,7 @@ jobs:
         pwd
         unzip -qq ${{ steps.download-ghidra.outputs.file-path }} -d /opt
         rm -v ${{ env.ghidra-zip-filename }}
-        rm -v test_data
+        rm -rfv test_data
         gradle -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
         mv -v dist/*.zip ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
 
