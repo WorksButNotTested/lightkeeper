@@ -125,6 +125,7 @@ public class LightKeeperProvider extends ComponentProvider implements ICoverageM
 		chooser.setTitle("Import Coverage Data");
 		chooser.setApproveButtonText("Import");
 		chooser.setFileSelectionMode(GhidraFileChooserMode.FILES_ONLY);
+		chooser.setMultiSelectionEnabled(true);
 
 		DockingAction importAction = new DockingAction("Import Coverage Data", getName()) {
 			@Override
@@ -135,21 +136,21 @@ public class LightKeeperProvider extends ComponentProvider implements ICoverageM
 					chooser.setSelectedFile(lastFile);
 				}
 
-				var file = chooser.getSelectedFile();
-				if (file == null) {
+				var files = chooser.getSelectedFiles();
+				if (files.size() == 0) {
 					return;
 				}
 
-				if (!file.exists()) {
+				if (files.stream().filter(f -> !f.exists()).count() != 0) {
 					return;
 				}
 
-				lastFile = file;
+				lastFile = files.get(0);
 
 				Task task = new Task("Import Coverage Data", true, true, true){
 					@Override
 					public void run(TaskMonitor monitor) throws CancelledException {
-						controller.importCoverage(monitor, file);
+						controller.importCoverage(monitor, files);
 					}
 				};
 				TaskLauncher.launch(task);

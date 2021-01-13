@@ -3,6 +3,7 @@ package lightkeeper.controller;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import ghidra.app.plugin.core.colorizer.ColorizingService;
 import ghidra.app.services.CodeViewerService;
@@ -116,19 +117,23 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		});
 	}
 
-	public void importCoverage(TaskMonitor monitor, File file) throws CancelledException {
+	public void importCoverage(TaskMonitor monitor, List<File> files) throws CancelledException {
 		monitor.checkCanceled();
-		monitor.setMessage(String.format("Importing: %s",file.getAbsolutePath()));
-		addMessage(String.format("Importing: %s",file.getAbsolutePath()));
+
 		try {
-			monitor.setProgress(0);
+			for(File file: files) {
+				monitor.setMessage(String.format("Importing: %s",file.getAbsolutePath()));
+				addMessage(String.format("Importing: %s",file.getAbsolutePath()));
+				monitor.setProgress(0);
 
-			var dataFile = new DynamoRioFile(file);
-			dataFile.addListener(this);
-			dataFile.read(monitor);
+				var dataFile = new DynamoRioFile(file);
+				dataFile.addListener(this);
+				dataFile.read(monitor);
 
-			addMessage(String.format("Imported: %s",file.getAbsolutePath()));
-			model.load(dataFile);
+				addMessage(String.format("Imported: %s",file.getAbsolutePath()));
+				model.load(dataFile);
+			}
+
 			model.update(monitor);
 			addMessage("Completed");
 			monitor.setProgress(100);
