@@ -2,6 +2,7 @@ package lightkeeper.io.module;
 
 public class LightKeeperModuleEntry {
 	protected int id;
+	protected int containingId;
 	protected long start;
 	protected long end;
 	protected long entry;
@@ -9,8 +10,9 @@ public class LightKeeperModuleEntry {
 	protected long timeStamp;
 	protected String path;
 	
-	public LightKeeperModuleEntry(int id, long start, long end, long entry, long checksum, long timeStamp, String path){		
+	public LightKeeperModuleEntry(int id, int containingId, long start, long end, long entry, long checksum, long timeStamp, String path){		
 		this.id = id;
+		this.containingId = containingId;
 		this.start = start;
 		this.end = end;
 		this.entry = entry;
@@ -27,6 +29,10 @@ public class LightKeeperModuleEntry {
 	
 	public int getId() {
 		return this.id;
+	}
+	
+	public int getContainingId() {
+		return this.containingId;
 	}
 	
 	public long getStart() {

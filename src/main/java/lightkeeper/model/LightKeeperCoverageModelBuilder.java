@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
@@ -35,7 +36,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 	protected TaskMonitor monitor;
 	protected LightKeeperFile file;
 	
-	protected LightKeeperModuleEntry module;
+	protected HashMap<Integer, LightKeeperModuleEntry> modules;
 	protected HashMap<Function, Set<LightKeeperBlockEntry>> functions = new HashMap<Function, Set<LightKeeperBlockEntry>>();
 	protected Set<LightKeeperBlockEntry> unassigned = new HashSet<LightKeeperBlockEntry>();
 	
@@ -75,7 +76,7 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		this.file = lightKeeperFile;
 		
 		monitor.checkCanceled();		
-		this.module = this.getModule();
+		this.modules = this.getModules();
 		monitor.checkCanceled();
 		
 		this.processEntries();
@@ -86,25 +87,34 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		monitor.checkCanceled();		
 	}
 	
-	public LightKeeperModuleEntry getModule () throws CancelledException, IOException {		
+	public HashMap<Integer, LightKeeperModuleEntry> getModules () throws CancelledException, IOException {
+		HashMap<Integer, LightKeeperModuleEntry> selectedModules = new HashMap<Integer, LightKeeperModuleEntry>();
 		File programFile = api.getProgramFile();
 		String programFileName = programFile.getName();
 		this.addMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
 		monitor.setMessage(String.format("Searching for basic blocks for: %s", programFile.getPath()));
 		
-		ArrayList<LightKeeperModuleEntry> modules = file.getModules();
-		for (int i = 0; i < modules.size(); i++)
-		{
+		ArrayList<LightKeeperModuleEntry> fileModules = file.getModules();
+		for (int i = 0; i < fileModules.size(); i++) {
 			monitor.checkCanceled();
-			LightKeeperModuleEntry currentModule = modules.get(i);
+			LightKeeperModuleEntry currentModule = fileModules.get(i);
 			File f = new File(currentModule.getPath());
 			String fileName = f.getName();
-			if (fileName.equals(programFileName))
-			{
-				return currentModule;
+			if (fileName.equals(programFileName)) {
+				selectedModules.put(currentModule.getId(), currentModule);
 			}
 		}
-		throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
+		
+		Stream<Integer> containingIds = selectedModules.values().stream().map(m -> m.getContainingId());
+		long distinct = containingIds.distinct().count();
+		if (distinct != 1) {
+			throw new IOException(String.format("Found %d distinct containing_ids for '%s'", distinct, programFileName));
+		}
+		
+		if (selectedModules.size() == 0)
+			throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
+		
+		return selectedModules;
 	}
 	
 	public void processEntries() throws CancelledException, IOException {		
@@ -117,9 +127,12 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing block %d / %d", i, blocks.size()));
 			LightKeeperBlockEntry block = blocks.get(i);
-			if (block.getModule() != module.getId())
+			int moduleId = block.getModule();
+			
+			if (!this.modules.containsKey(moduleId))
 				continue;
 			
+			LightKeeperModuleEntry module = this.modules.get(moduleId);
 			if (block.getEnd() > module.getSize())
 				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), module.getSize()));
 			
