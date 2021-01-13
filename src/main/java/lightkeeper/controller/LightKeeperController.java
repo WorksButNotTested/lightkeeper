@@ -113,9 +113,9 @@ public class LightKeeperController implements LightKeeperEventListener {
 		try {			
 			monitor.setProgress(0);
 			
-			LightKeeperFile dataFile = new LightKeeperFile(file, monitor);
+			LightKeeperFile dataFile = new LightKeeperFile(file);
 			dataFile.addListener(this);
-			dataFile.read();
+			dataFile.read(monitor);
 			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));
 			this.model.load(dataFile);
