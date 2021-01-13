@@ -107,10 +107,10 @@ public class LightKeeperModuleReader {
 		String idString = moduleMatcher.group("id");
 		int id = parseNumber(idString, Integer::parseInt, String.format("Invalid id: %s", idString));
 	
-		int containingId = 0;
+		int containingId = id;
 		if (this.selectedModuleTriplet.hasContainingId) {
 			String containingIdString = moduleMatcher.group("containingid");
-			containingId = parseNumber(idString, Integer::parseInt, String.format("Invalid containing_id: %s", containingIdString));
+			containingId = parseNumber(containingIdString, Integer::parseInt, String.format("Invalid containing_id: %s", containingIdString));
 		}
 		
 		String startString = moduleMatcher.group("start");

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import ghidra.program.database.map.AddressMap;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressRange;
@@ -105,20 +106,24 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			}
 		}
 		
-		Stream<Integer> containingIds = selectedModules.values().stream().map(m -> m.getContainingId());
-		long distinct = containingIds.distinct().count();
-		if (distinct != 1) {
-			throw new IOException(String.format("Found %d distinct containing_ids for '%s'", distinct, programFileName));
-		}
-		
 		if (selectedModules.size() == 0)
 			throw new IOException(String.format("Failed to find matching module entry for '%s'", programFileName));
 		
 		return selectedModules;
 	}
 	
-	public void processEntries() throws CancelledException, IOException {		
-		Address baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+	protected long getModuleLimit(int moduleId) {
+		LightKeeperModuleEntry module = this.modules.get(moduleId);
+		int containing_id = module.getContainingId();
+		Stream<LightKeeperModuleEntry> selectedModules = this.modules.values().stream().filter(m -> m.getContainingId() == containing_id);
+		Stream<Long> limits = selectedModules.map(m -> m.getEnd());
+		Long maxLimit = limits.max(Long::compare).get();
+		return maxLimit;
+	}
+	
+	public void processEntries() throws CancelledException, IOException {
+		AddressMap addressMap = api.getCurrentProgram().getAddressMap();
+		Address baseAddress = addressMap.getImageBase();
 		this.addMessage(String.format("Base address: %x", baseAddress.getOffset()));
 		
 		ArrayList<LightKeeperBlockEntry> blocks = file.getBlocks();
@@ -132,9 +137,9 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			if (!this.modules.containsKey(moduleId))
 				continue;
 			
-			LightKeeperModuleEntry module = this.modules.get(moduleId);
-			if (block.getEnd() > module.getSize())
-				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), module.getSize()));
+			long moduleLimit = getModuleLimit(moduleId);
+			if (block.getEnd() > moduleLimit)
+				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
 			
 			Address addr = baseAddress.add(block.getStart());
 			Function function = api.getFunctionContaining(addr);

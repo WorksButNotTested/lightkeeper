@@ -43,10 +43,6 @@ public class LightKeeperModuleEntry {
 		return this.end;
 	}
 	
-	public long getSize() {
-		return this.end - this.start;
-	}
-	
 	public String getPath() {
 		return this.path;
 	}
