@@ -22,10 +22,10 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
-import lightkeeper.controller.LightKeeperController;
-import lightkeeper.controller.LightKeeperDisassemblyController;
-import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
-import lightkeeper.model.table.LightKeeperCoverageTableModel;
+import lightkeeper.controller.Controller;
+import lightkeeper.controller.DisassemblyController;
+import lightkeeper.model.instruction.CoverageInstructionModel;
+import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
@@ -39,20 +39,20 @@ import lightkeeper.view.LightKeeperProvider;
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 
-	protected LightKeeperCoverageTableModel tableModel;
-	protected LightKeeperCoverageInstructionModel instructionModel;
-	protected LightKeeperController controller;
-	protected LightKeeperDisassemblyController disassemblyController;
+	protected CoverageTableModel tableModel;
+	protected CoverageInstructionModel instructionModel;
+	protected Controller controller;
+	protected DisassemblyController disassemblyController;
 	protected LightKeeperProvider provider;
 	protected Program program;
 	protected FlatProgramAPI api;
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		tableModel = new LightKeeperCoverageTableModel(this);
-		instructionModel = new LightKeeperCoverageInstructionModel(this);
-		controller = new LightKeeperController(this, this.tableModel, this.instructionModel);
-		disassemblyController = new LightKeeperDisassemblyController(this, this.instructionModel);		
+		tableModel = new CoverageTableModel(this);
+		instructionModel = new CoverageInstructionModel(this);
+		controller = new Controller(this, this.tableModel, this.instructionModel);
+		disassemblyController = new DisassemblyController(this, this.instructionModel);		
 		provider = new LightKeeperProvider(this, this.controller,  this.tableModel, "Light Keeper");
 	}
 

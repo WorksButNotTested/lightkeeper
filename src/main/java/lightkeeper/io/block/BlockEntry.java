@@ -1,11 +1,11 @@
 package lightkeeper.io.block;
 
-public class LightKeeperBlockEntry {
+public class BlockEntry {
 	protected long start;
 	protected int size;
 	protected int module;
 	
-	public LightKeeperBlockEntry(long start, int size, int module) {
+	public BlockEntry(long start, int size, int module) {
 		this.start = start;
 		this.size = size;
 		this.module = module;
@@ -39,11 +39,11 @@ public class LightKeeperBlockEntry {
             return true; 
         } 
   
-        if (!(o instanceof LightKeeperBlockEntry)) { 
+        if (!(o instanceof BlockEntry)) { 
             return false; 
         } 
             
-        LightKeeperBlockEntry e = (LightKeeperBlockEntry) o; 
+        BlockEntry e = (BlockEntry) o; 
         if (e.getModule() != this.getModule())
         	return false;
         

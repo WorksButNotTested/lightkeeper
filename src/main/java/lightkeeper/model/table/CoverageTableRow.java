@@ -1,14 +1,14 @@
 package lightkeeper.model.table;
 
-public class LightKeeperCoverageTableModelRow {
+public class CoverageTableRow {
 	protected String name;
 	protected long address;
-	protected LightKeeperFraction blocks;
-	protected LightKeeperFraction instructions;
+	protected CoverageFraction blocks;
+	protected CoverageFraction instructions;
 	protected long functionSize;
 	
 	
-	public LightKeeperCoverageTableModelRow (String name, long address, LightKeeperFraction blocks, LightKeeperFraction instructions, long functionSize) {
+	public CoverageTableRow (String name, long address, CoverageFraction blocks, CoverageFraction instructions, long functionSize) {
 		this.name = name;
 		this.address = address;
 		this.blocks = blocks;
@@ -16,8 +16,8 @@ public class LightKeeperCoverageTableModelRow {
 		this.functionSize = functionSize;			
 	}
 	
-	public LightKeeperPercentage getCoverage() {
-		return new LightKeeperPercentage(this.instructions);
+	public CoveragePercentage getCoverage() {
+		return new CoveragePercentage(this.instructions);
 	}
 	
 	public long getAddress() {
@@ -28,11 +28,11 @@ public class LightKeeperCoverageTableModelRow {
 		return this.name;
 	}
 			
-	public LightKeeperFraction getBlocks() {
+	public CoverageFraction getBlocks() {
 		return this.blocks;
 	}
 	
-	public LightKeeperFraction getInstructions() {
+	public CoverageFraction getInstructions() {
 		return this.instructions;
 	}
 	

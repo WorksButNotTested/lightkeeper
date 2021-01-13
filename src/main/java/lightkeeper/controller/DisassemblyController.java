@@ -19,19 +19,19 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.model.LightKeeperCoverageModelListener;
-import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
+import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.instruction.CoverageInstructionModel;
 
 @SuppressWarnings("deprecation")
-public class LightKeeperDisassemblyController {
+public class DisassemblyController {
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageInstructionModel model;	
+	protected CoverageInstructionModel model;	
 	
-	public LightKeeperDisassemblyController(LightKeeperPlugin plugin, LightKeeperCoverageInstructionModel model) {
+	public DisassemblyController(LightKeeperPlugin plugin, CoverageInstructionModel model) {
 		this.plugin = plugin;
 		this.model = model;
 		
-		this.model.addModelListener(new LightKeeperCoverageModelListener() {
+		this.model.addModelListener(new CoverageModelListener() {
 			@Override
 			public void modelChanged(TaskMonitor monitor) throws CancelledException {
 				instructionModelChanged(monitor);				

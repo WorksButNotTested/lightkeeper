@@ -23,14 +23,14 @@ import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.model.LightKeeperCoverageModelListener;
-import lightkeeper.model.LightKeeperCoverageRangeCollection;
+import lightkeeper.controller.EventListener;
+import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.CoverageFileRanges;
 
-public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<LightKeeperCoverageTableModelRow> implements LightKeeperEventListener {	
-	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
+public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements EventListener {	
+	private List<EventListener> listeners = new ArrayList<EventListener>();
 	
-	public void addListener(LightKeeperEventListener listener) {
+	public void addListener(EventListener listener) {
 		this.listeners.add(listener);
 	}
 	
@@ -49,9 +49,9 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 		this.listeners.forEach(l -> l.addException(exc));		
 	}
 	
-	protected ArrayList<LightKeeperCoverageModelListener> modelListeners = new ArrayList<LightKeeperCoverageModelListener>();
+	protected ArrayList<CoverageModelListener> modelListeners = new ArrayList<CoverageModelListener>();
 	
-	public void addModelListener(LightKeeperCoverageModelListener listener) {
+	public void addModelListener(CoverageModelListener listener) {
 		modelListeners.add(listener);
 	}
 	
@@ -65,10 +65,10 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
     };
 
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageRangeCollection modelRanges;
-	protected ArrayList<LightKeeperCoverageTableModelRow> rows = new ArrayList<LightKeeperCoverageTableModelRow>();
+	protected CoverageFileRanges modelRanges;
+	protected ArrayList<CoverageTableRow> rows = new ArrayList<CoverageTableRow>();
 	
-	public LightKeeperCoverageTableModel(LightKeeperPlugin plugin) {
+	public CoverageTableModel(LightKeeperPlugin plugin) {
 		super();
 		this.plugin = plugin;		
 		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
@@ -77,7 +77,7 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 		this.setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 	
-	public void load(LightKeeperCoverageRangeCollection ranges) {
+	public void load(CoverageFileRanges ranges) {
 		this.modelRanges = ranges;
 	}
 
@@ -97,7 +97,7 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 	}
 	
 	public void processRanges(TaskMonitor monitor) throws CancelledException {
-		this.rows = new ArrayList<LightKeeperCoverageTableModelRow>();
+		this.rows = new ArrayList<CoverageTableRow>();
 		HashMap<Function, Set<AddressRange>> functions = new HashMap<Function, Set<AddressRange>>();
 		Set<AddressRange> unassigned = new HashSet<AddressRange>();
 		FlatProgramAPI api = this.plugin.getApi();
@@ -139,17 +139,17 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 			AddressSetView body = function.getBody();
 			Set<AddressRange> ranges = functions.get(function);
 			
-			LightKeeperFraction codeBlockInfo = this.processCodeBlocks(monitor, function, ranges);
-			LightKeeperFraction instructionInfo = this.processInstructions(monitor, function, ranges);
+			CoverageFraction codeBlockInfo = this.processCodeBlocks(monitor, function, ranges);
+			CoverageFraction instructionInfo = this.processInstructions(monitor, function, ranges);
 			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
 			
-			LightKeeperCoverageTableModelRow row = new LightKeeperCoverageTableModelRow(function.getName(), body.getMinAddress().getOffset(), 
+			CoverageTableRow row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(), 
 					codeBlockInfo, instructionInfo, functionSize);
 			this.rows.add(row);
 		}
 	}
 	
-	public LightKeeperFraction processCodeBlocks(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
+	public CoverageFraction processCodeBlocks(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
 		FlatProgramAPI api = this.plugin.getApi();
 		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
 		AddressSetView body = function.getBody();
@@ -179,10 +179,10 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 				hitCodeBlocks++;								
 			}
 		}
-		return new LightKeeperFraction(hitCodeBlocks, codeBlocks);
+		return new CoverageFraction(hitCodeBlocks, codeBlocks);
 	}
 	
-	public LightKeeperFraction processInstructions(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
+	public CoverageFraction processInstructions(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
 		FlatProgramAPI api = this.plugin.getApi();
 		Listing listing = api.getCurrentProgram().getListing();
 		AddressSetView body = function.getBody();
@@ -211,7 +211,7 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 				hitInstructions++;										
 			}
 		}
-		return new LightKeeperFraction(hitInstructions, instructions);
+		return new CoverageFraction(hitInstructions, instructions);
 	}
 	
 	public void processUnassigned(TaskMonitor monitor, Set<AddressRange> unassigned) throws CancelledException {		
@@ -225,21 +225,21 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 			AddressRange range = iterator.next();
 			Address addr = range.getMinAddress();
 			String name = String.format("_unknown_%x", addr.getOffset());
-			LightKeeperFraction zeroFraction = new LightKeeperFraction(0, 0);
-			LightKeeperCoverageTableModelRow row = new LightKeeperCoverageTableModelRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
+			CoverageFraction zeroFraction = new CoverageFraction(0, 0);
+			CoverageTableRow row = new CoverageTableRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
 			this.rows.add(row);
 		}
 	}
 	
 	public void clear(TaskMonitor monitor) throws CancelledException{
 		this.modelRanges = null;
-		this.rows = new ArrayList<LightKeeperCoverageTableModelRow>();
+		this.rows = new ArrayList<CoverageTableRow>();
 		this.notifyUpdate(monitor);
 	}
 	
 	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
 		this.fireTableDataChanged();
-		for (LightKeeperCoverageModelListener listener: this.modelListeners) {
+		for (CoverageModelListener listener: this.modelListeners) {
 			listener.modelChanged(monitor);
 		}
 	}
@@ -264,12 +264,12 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 	}
 
 	@Override
-	public List<LightKeeperCoverageTableModelRow> getModelData() {
+	public List<CoverageTableRow> getModelData() {
 		return this.rows;
 	}
 
 	@Override
-	public Object getColumnValueForRow(LightKeeperCoverageTableModelRow row, int columnIndex) {
+	public Object getColumnValueForRow(CoverageTableRow row, int columnIndex) {
 		switch(columnIndex) {
 			case 0:
 				return row.getCoverage();

@@ -15,14 +15,14 @@ import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.model.LightKeeperCoverageModelListener;
-import lightkeeper.model.LightKeeperCoverageRangeCollection;
+import lightkeeper.controller.EventListener;
+import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.CoverageFileRanges;
 
-public class LightKeeperCoverageInstructionModel implements LightKeeperEventListener {
-	private List<LightKeeperEventListener> eventListeners = new ArrayList<LightKeeperEventListener>();
+public class CoverageInstructionModel implements EventListener {
+	private List<EventListener> eventListeners = new ArrayList<EventListener>();
 	
-	public void addListener(LightKeeperEventListener listener) {
+	public void addListener(EventListener listener) {
 		this.eventListeners.add(listener);
 	}
 	
@@ -41,22 +41,22 @@ public class LightKeeperCoverageInstructionModel implements LightKeeperEventList
 		this.eventListeners.forEach(l -> l.addException(exc));		
 	}
 	
-	protected ArrayList<LightKeeperCoverageModelListener> modelListeners = new ArrayList<LightKeeperCoverageModelListener>();
+	protected ArrayList<CoverageModelListener> modelListeners = new ArrayList<CoverageModelListener>();
 	
-	public void addModelListener(LightKeeperCoverageModelListener listener) {
+	public void addModelListener(CoverageModelListener listener) {
 		modelListeners.add(listener);
 	}
 	
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageRangeCollection modelRanges;
+	protected CoverageFileRanges modelRanges;
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
 	
 	
-	public LightKeeperCoverageInstructionModel(LightKeeperPlugin plugin) {
+	public CoverageInstructionModel(LightKeeperPlugin plugin) {
 		this.plugin = plugin;	
 	}
 	
-	public void load(LightKeeperCoverageRangeCollection ranges) {
+	public void load(CoverageFileRanges ranges) {
 		this.modelRanges = ranges;
 	}
 
@@ -97,7 +97,7 @@ public class LightKeeperCoverageInstructionModel implements LightKeeperEventList
 	}
 	
 	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
-		for (LightKeeperCoverageModelListener listener: this.modelListeners) {
+		for (CoverageModelListener listener: this.modelListeners) {
 			listener.modelChanged(monitor);
 		}
 	}

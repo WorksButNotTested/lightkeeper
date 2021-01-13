@@ -9,10 +9,10 @@ import java.util.regex.Pattern;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.io.LightKeeperReader;
+import lightkeeper.controller.EventListener;
+import lightkeeper.io.BinaryLineReader;
 
-public class LightKeeperModuleReader {
+public class ModuleReader {
 //	Columns: id, containing_id, start, end, entry, offset, path
 	protected final String COLUMN_2_HDR_WIN = "Columns: id, base, end, entry, checksum, timestamp, path";
 	protected final Pattern COLUMN_2_HDR_WIN_FMT = Pattern.compile("^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<checksum>[0-9a-fA-F]+), (0x)?(?<timestamp>[0-9a-fA-F]+), (?<path>.+)$");
@@ -32,9 +32,9 @@ public class LightKeeperModuleReader {
 	protected final String COLUMN_4_HDR_LINUX = "Columns: id, containing_id, start, end, entry, offset, path";
 	protected final Pattern COLUMN_4_HDR_LINUX_FMT = Pattern.compile("^\\s*(?<id>\\d+), \\s*(?<containingid>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<offset>[0-9a-fA-F]+), (?<path>.+)$");
 	
-	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
+	private List<EventListener> listeners = new ArrayList<EventListener>();
 	protected TaskMonitor monitor;
-	protected LightKeeperReader reader;
+	protected BinaryLineReader reader;
 	protected String columnHeader;
 	protected final ArrayList<ModuleTriplet> formats = new ArrayList<ModuleTriplet>();
 	protected ModuleTriplet selectedModuleTriplet;
@@ -56,7 +56,7 @@ public class LightKeeperModuleReader {
 		}
 	}
 	
-	public LightKeeperModuleReader(TaskMonitor monitor, LightKeeperReader reader, int tableVersion) throws CancelledException, IOException {		
+	public ModuleReader(TaskMonitor monitor, BinaryLineReader reader, int tableVersion) throws CancelledException, IOException {		
 		this.monitor = monitor;
 		this.reader = reader;
 		
@@ -80,7 +80,7 @@ public class LightKeeperModuleReader {
 			throw new IOException (String.format("Unsupported pattern: '%s'", formats.get(0).header));
 	}
 	
-	public void addListener(LightKeeperEventListener listener) {
+	public void addListener(EventListener listener) {
 		this.listeners.add(listener);
 	}
 	
@@ -95,7 +95,7 @@ public class LightKeeperModuleReader {
 		this.addMessage(columnHeader);
 	}	
 	
-	public LightKeeperModuleEntry read() throws CancelledException, IOException {
+	public ModuleEntry read() throws CancelledException, IOException {
 		this.monitor.checkCanceled();
 		String moduleLine = this.reader.readLine();
 		this.addMessage(moduleLine);
@@ -134,7 +134,7 @@ public class LightKeeperModuleReader {
 		
 		String pathString = moduleMatcher.group("path");
 		
-		LightKeeperModuleEntry module = new LightKeeperModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
+		ModuleEntry module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
 		this.addMessage(String.format("Read Module: %s", module));
 		this.monitor.checkCanceled();
 		return module;		

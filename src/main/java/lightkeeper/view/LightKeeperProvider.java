@@ -31,24 +31,24 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.LightKeeperController;
-import lightkeeper.model.LightKeeperCoverageModelListener;
-import lightkeeper.model.table.LightKeeperCoverageTableModel;
-import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
+import lightkeeper.controller.Controller;
+import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.table.CoverageTableModel;
+import lightkeeper.model.table.CoverageTableRow;
 import resources.Icons;
 import resources.ResourceManager;
 
-public class LightKeeperProvider extends ComponentProvider implements LightKeeperCoverageModelListener {
+public class LightKeeperProvider extends ComponentProvider implements CoverageModelListener {
 
 	private static File lastFile = null;
 	
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageTableModel model;
-	protected LightKeeperController controller;
+	protected CoverageTableModel model;
+	protected Controller controller;
 	protected GTable table;
 	protected JPanel panel;
 
-	public LightKeeperProvider(LightKeeperPlugin plugin, LightKeeperController controller, LightKeeperCoverageTableModel model, String owner) {
+	public LightKeeperProvider(LightKeeperPlugin plugin, Controller controller, CoverageTableModel model, String owner) {
 		super(plugin.getTool(), owner, owner);
 		this.plugin = plugin;
 		this.controller = controller;
@@ -85,7 +85,7 @@ public class LightKeeperProvider extends ComponentProvider implements LightKeepe
 			@Override
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
 				Component component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
-				LightKeeperCoverageTableModelRow modelRow = model.getModelData().get(row);
+				CoverageTableRow modelRow = model.getModelData().get(row);
 				double coverage = modelRow.getCoverage().getDouble();
 				if (coverage == 0.0d) {					
 					component.setForeground(Color.BLACK);

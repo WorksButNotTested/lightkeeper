@@ -1,7 +1,7 @@
 package lightkeeper.model.table;
 
-public class LightKeeperPercentage extends LightKeeperFraction{
-	public LightKeeperPercentage(LightKeeperFraction fraction) {
+public class CoveragePercentage extends CoverageFraction{
+	public CoveragePercentage(CoverageFraction fraction) {
 		super(fraction.numerator, fraction.denominator);
 	}
 	

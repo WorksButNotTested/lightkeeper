@@ -7,12 +7,12 @@ import java.io.InputStream;
 
 import ghidra.app.util.bin.ByteProvider;
 
-public class LightKeeperByteProvider implements ByteProvider {
+public class CountedByteProvider implements ByteProvider {
 	private InputStream inputStream;
 	private long length;
 	private long currentIndex;
 
-	public LightKeeperByteProvider(InputStream inputStream, long length) {
+	public CountedByteProvider(InputStream inputStream, long length) {
 		this.inputStream = inputStream;
 		this.length = length;
 	}

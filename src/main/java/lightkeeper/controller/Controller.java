@@ -21,25 +21,25 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.io.LightKeeperFile;
-import lightkeeper.model.LightKeeperCoverageModelListener;
-import lightkeeper.model.LightKeeperCoverageRangeCollection;
-import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
-import lightkeeper.model.table.LightKeeperCoverageTableModel;
-import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
+import lightkeeper.io.DynamoRioFile;
+import lightkeeper.model.CoverageModelListener;
+import lightkeeper.model.CoverageFileRanges;
+import lightkeeper.model.instruction.CoverageInstructionModel;
+import lightkeeper.model.table.CoverageTableModel;
+import lightkeeper.model.table.CoverageTableRow;
 
-public class LightKeeperController implements LightKeeperEventListener {
+public class Controller implements EventListener {
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageTableModel tableModel;	
-	protected LightKeeperCoverageInstructionModel instructionModel;
+	protected CoverageTableModel tableModel;	
+	protected CoverageInstructionModel instructionModel;
 	
-	public LightKeeperController(LightKeeperPlugin plugin, LightKeeperCoverageTableModel tableModel, LightKeeperCoverageInstructionModel instructionModel) {
+	public Controller(LightKeeperPlugin plugin, CoverageTableModel tableModel, CoverageInstructionModel instructionModel) {
 		this.plugin = plugin;
 		this.tableModel = tableModel;
 		this.instructionModel = instructionModel;
 		tableModel.addListener(this);
 		instructionModel.addListener(this);
-		this.instructionModel.addModelListener(new LightKeeperCoverageModelListener() {
+		this.instructionModel.addModelListener(new CoverageModelListener() {
 			@Override
 			public void modelChanged(TaskMonitor monitor) throws CancelledException {
 				colour(monitor);
@@ -52,7 +52,7 @@ public class LightKeeperController implements LightKeeperEventListener {
 		if (codeViewerService == null)
 			return;
 		
-		LightKeeperCoverageTableModelRow modelRow = this.tableModel.getModelData().get(row);
+		CoverageTableRow modelRow = this.tableModel.getModelData().get(row);
 		long addr = modelRow.getAddress();
 		
 		FlatProgramAPI api = this.plugin.getApi();
@@ -129,11 +129,11 @@ public class LightKeeperController implements LightKeeperEventListener {
 		try {			
 			monitor.setProgress(0);
 			
-			LightKeeperFile dataFile = new LightKeeperFile(file);
+			DynamoRioFile dataFile = new DynamoRioFile(file);
 			dataFile.addListener(this);
 			dataFile.read(monitor);
 			
-			LightKeeperCoverageRangeCollection coverageFile = new LightKeeperCoverageRangeCollection(plugin);
+			CoverageFileRanges coverageFile = new CoverageFileRanges(plugin);
 			coverageFile.read(monitor, dataFile);
 			
 			this.addMessage(String.format("Imported: %s",file.getAbsolutePath()));

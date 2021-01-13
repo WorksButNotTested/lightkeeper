@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import ghidra.app.util.bin.BinaryReader;
 
-public class LightKeeperReader extends BinaryReader {
+public class BinaryLineReader extends BinaryReader {
 
-	protected LightKeeperByteProvider provider;
+	protected CountedByteProvider provider;
 	
-	public LightKeeperReader(LightKeeperByteProvider provider) {		
+	public BinaryLineReader(CountedByteProvider provider) {		
 		super(provider, true);
 		this.provider = provider;
 	}

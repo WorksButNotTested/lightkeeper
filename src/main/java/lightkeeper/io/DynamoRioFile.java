@@ -12,33 +12,33 @@ import java.util.stream.Stream;
 
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
-import lightkeeper.controller.LightKeeperEventListener;
-import lightkeeper.io.block.LightKeeperBlockEntry;
-import lightkeeper.io.block.LightKeeperBlockReader;
-import lightkeeper.io.module.LightKeeperModuleEntry;
-import lightkeeper.io.module.LightKeeperModuleReader;
+import lightkeeper.controller.EventListener;
+import lightkeeper.io.block.BlockEntry;
+import lightkeeper.io.block.BlockReader;
+import lightkeeper.io.module.ModuleEntry;
+import lightkeeper.io.module.ModuleReader;
 
-public class LightKeeperFile implements LightKeeperEventListener {		
+public class DynamoRioFile implements EventListener {		
 	protected final String HEADER = "DRCOV VERSION: 2";
 	protected final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
 	protected final Pattern TABLE_REGEX = Pattern.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
 	protected final Pattern BB_TABLE_REGEX = Pattern.compile("^BB Table: (?<blocks>\\d+) bbs$");
 			
-	protected LightKeeperByteProvider provider;
-	protected LightKeeperReader reader;	
+	protected CountedByteProvider provider;
+	protected BinaryLineReader reader;	
 
 	protected String flavour;
 	protected int tableVersion;
 	protected int tableCount;
-	protected ArrayList<LightKeeperModuleEntry> modules = new ArrayList<LightKeeperModuleEntry>();
+	protected ArrayList<ModuleEntry> modules = new ArrayList<ModuleEntry>();
 	protected long blockCount;
-	protected ArrayList<LightKeeperBlockEntry> blocks = new ArrayList<LightKeeperBlockEntry>();
-	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
+	protected ArrayList<BlockEntry> blocks = new ArrayList<BlockEntry>();
+	private List<EventListener> listeners = new ArrayList<EventListener>();
 	
-	public LightKeeperFile (File file) throws IOException {		
+	public DynamoRioFile (File file) throws IOException {		
 		FileInputStream stream = new FileInputStream(file);
-		this.provider = new LightKeeperByteProvider(stream, file.length());
-		this.reader = new LightKeeperReader(provider);			
+		this.provider = new CountedByteProvider(stream, file.length());
+		this.reader = new BinaryLineReader(provider);			
 	}
 	
 	public void read(TaskMonitor monitor) throws IOException, CancelledException {
@@ -50,7 +50,7 @@ public class LightKeeperFile implements LightKeeperEventListener {
 		this.readBlocks(monitor);
 	}
 	
-	public void addListener(LightKeeperEventListener listener) {
+	public void addListener(EventListener listener) {
 		this.listeners.add(listener);
 	}
 	
@@ -116,13 +116,13 @@ public class LightKeeperFile implements LightKeeperEventListener {
 	}
 	
 	private void readModules(TaskMonitor monitor) throws CancelledException, IOException {
-		LightKeeperModuleReader moduleReader = new LightKeeperModuleReader(monitor, this.reader, this.tableVersion);
+		ModuleReader moduleReader = new ModuleReader(monitor, this.reader, this.tableVersion);
 		moduleReader.addListener(this);
 		for (int i = 0; i < tableCount; i++)
 		{
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Reading module: %d", i));
-			LightKeeperModuleEntry module = moduleReader.read();
+			ModuleEntry module = moduleReader.read();
 			modules.add(module);
 		}
 	}
@@ -143,7 +143,7 @@ public class LightKeeperFile implements LightKeeperEventListener {
 	}
 	
 	private void readBlocks(TaskMonitor monitor) throws CancelledException, IOException {
-		LightKeeperBlockReader blockReader = new LightKeeperBlockReader(monitor, this.reader);
+		BlockReader blockReader = new BlockReader(monitor, this.reader);
 		blockReader.addListener(this);
 		
 		HashMap<Integer, Long> moduleLimits = this.getModuleLimits();
@@ -151,7 +151,7 @@ public class LightKeeperFile implements LightKeeperEventListener {
 		for (int i = 0; i < this.blockCount; i++) {
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Reading block: %d", i));
-			LightKeeperBlockEntry block = blockReader.read();
+			BlockEntry block = blockReader.read();
 			long moduleLimit = moduleLimits.get(block.getModule());
 			if (block.getEnd() > moduleLimit) {
 				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
@@ -168,19 +168,19 @@ public class LightKeeperFile implements LightKeeperEventListener {
 		this.addMessage("File parsing complete");
 	}
 	
-	public ArrayList<LightKeeperModuleEntry> getModules() {
+	public ArrayList<ModuleEntry> getModules() {
 		return this.modules;
 	}
 	
-	public ArrayList<LightKeeperBlockEntry> getBlocks() {
+	public ArrayList<BlockEntry> getBlocks() {
 		return this.blocks;
 	}
 	
 	protected HashMap<Integer, Long> getModuleLimits() {
 		HashMap<Integer, Long> moduleLimits = new HashMap<Integer, Long>();
-		for (LightKeeperModuleEntry module: this.modules) {
+		for (ModuleEntry module: this.modules) {
 			int containing_id = module.getContainingId();
-			Stream<LightKeeperModuleEntry> selectedModules = this.modules.stream()
+			Stream<ModuleEntry> selectedModules = this.modules.stream()
 				.filter(m -> m.getContainingId() == containing_id);
 			Stream<Long> limits = selectedModules.map(m -> m.getEnd());
 			Long maxLimit = limits.max(Long::compare).get();

@@ -1,10 +1,10 @@
 package lightkeeper.model.table;
 
-public class LightKeeperFraction implements Comparable<LightKeeperFraction> {
+public class CoverageFraction implements Comparable<CoverageFraction> {
 	protected long numerator;
 	protected long denominator;
 	
-	public LightKeeperFraction(long numerator, long denominator) {
+	public CoverageFraction(long numerator, long denominator) {
 		this.numerator = numerator;
 		this.denominator = denominator;
 	}
@@ -21,7 +21,7 @@ public class LightKeeperFraction implements Comparable<LightKeeperFraction> {
 	}
 	
 	@Override
-	public int compareTo(LightKeeperFraction other) {		
+	public int compareTo(CoverageFraction other) {		
 		return Double.compare(this.getDouble(), other.getDouble());
 	}
 }
