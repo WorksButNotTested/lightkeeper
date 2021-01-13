@@ -112,15 +112,6 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 		return selectedModules;
 	}
 	
-	protected long getModuleLimit(int moduleId) {
-		LightKeeperModuleEntry module = this.modules.get(moduleId);
-		int containing_id = module.getContainingId();
-		Stream<LightKeeperModuleEntry> selectedModules = this.modules.values().stream().filter(m -> m.getContainingId() == containing_id);
-		Stream<Long> limits = selectedModules.map(m -> m.getEnd());
-		Long maxLimit = limits.max(Long::compare).get();
-		return maxLimit;
-	}
-	
 	public void processEntries() throws CancelledException, IOException {
 		AddressMap addressMap = api.getCurrentProgram().getAddressMap();
 		Address baseAddress = addressMap.getImageBase();
@@ -136,10 +127,6 @@ public class LightKeeperCoverageModelBuilder implements LightKeeperEventListener
 			
 			if (!this.modules.containsKey(moduleId))
 				continue;
-			
-			long moduleLimit = getModuleLimit(moduleId);
-			if (block.getEnd() > moduleLimit)
-				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
 			
 			Address addr = baseAddress.add(block.getStart());
 			Function function = api.getFunctionContaining(addr);
