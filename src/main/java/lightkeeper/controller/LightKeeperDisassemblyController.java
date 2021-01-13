@@ -3,9 +3,6 @@ package lightkeeper.controller;
 import java.awt.Color;
 import java.math.BigInteger;
 
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
-
 import docking.widgets.fieldpanel.listener.IndexMapper;
 import docking.widgets.fieldpanel.listener.LayoutModelListener;
 import ghidra.app.decompiler.ClangLine;
@@ -22,8 +19,8 @@ import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
+import lightkeeper.model.LightKeeperCoverageModelListener;
 import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
-import lightkeeper.model.instruction.LightKeeperCoverageInstructionModelListener;
 
 @SuppressWarnings("deprecation")
 public class LightKeeperDisassemblyController {
@@ -34,15 +31,15 @@ public class LightKeeperDisassemblyController {
 		this.plugin = plugin;
 		this.model = model;
 		
-		this.model.addInstructionModelListener(new LightKeeperCoverageInstructionModelListener() {
+		this.model.addModelListener(new LightKeeperCoverageModelListener() {
 			@Override
-			public void instructionsChanged() {
-				modelChanged();				
+			public void modelChanged(TaskMonitor monitor) throws CancelledException {
+				instructionModelChanged(monitor);				
 			}
 		});			
 	}
 	
-	public void modelChanged() {
+	public void instructionModelChanged(TaskMonitor monitor) throws CancelledException {
 		DecompilerHighlightService highlightService = plugin.getTool().getService(DecompilerHighlightService.class);
 		if (highlightService == null)
 			return;
@@ -57,14 +54,14 @@ public class LightKeeperDisassemblyController {
 			
 			@Override
 			public void dataChanged(BigInteger start, BigInteger end) {
-				updatedModel(controller);				
+				updatedModel(controller);			
 			}
 		});
 		
-		updatedModel(controller);
+		updateCoverage(monitor, controller);
 	}
 		
-	public void updateCoverage(ClangLayoutController controller, TaskMonitor monitor) throws CancelledException {			
+	public void updateCoverage(TaskMonitor monitor, ClangLayoutController controller) throws CancelledException {			
 		FlatProgramAPI api = plugin.getApi();
 		if (api == null)
 			return;
@@ -95,7 +92,7 @@ public class LightKeeperDisassemblyController {
 		Task task = new Task("Clear Coverage Data", true, true, true){
 			@Override
 			public void run(TaskMonitor monitor) throws CancelledException {
-				updateCoverage(controller, monitor);
+				updateCoverage(monitor, controller);
 			}
 		};
 		TaskLauncher.launch(task);

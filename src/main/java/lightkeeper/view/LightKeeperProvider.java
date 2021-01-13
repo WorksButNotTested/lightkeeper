@@ -32,12 +32,13 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperController;
+import lightkeeper.model.LightKeeperCoverageModelListener;
 import lightkeeper.model.table.LightKeeperCoverageTableModel;
 import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
 import resources.Icons;
 import resources.ResourceManager;
 
-public class LightKeeperProvider extends ComponentProvider implements TableModelListener {
+public class LightKeeperProvider extends ComponentProvider implements LightKeeperCoverageModelListener {
 
 	private static File lastFile = null;
 	
@@ -62,7 +63,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		TableSortStateEditor sortStateEditor = new TableSortStateEditor();
 		sortStateEditor.addSortedColumn(0);
 		model.setTableSortState(sortStateEditor.createTableSortState());
-		model.addTableModelListener(this);
+		model.addModelListener(this);
 		
 		table = new GTable();
 		table.setModel(model);
@@ -205,15 +206,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	}
 
 	@Override
-	public void tableChanged(TableModelEvent arg0) {
-		this.table.repaint();		
-		Task task = new Task("Paint Coverage Data", true, true, true){
-			@Override
-			public void run(TaskMonitor monitor) throws CancelledException {				
-				controller.colour(monitor);				
-			}
-		};
-		TaskLauncher.launch(task);
-				
+	public void modelChanged(TaskMonitor monitor) throws CancelledException {
+		this.table.repaint();
+		controller.colour(monitor);
 	}	
 }

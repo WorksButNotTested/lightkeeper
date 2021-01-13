@@ -16,6 +16,7 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperEventListener;
+import lightkeeper.model.LightKeeperCoverageModelListener;
 import lightkeeper.model.LightKeeperCoverageRangeCollection;
 
 public class LightKeeperCoverageInstructionModel implements LightKeeperEventListener {
@@ -40,10 +41,16 @@ public class LightKeeperCoverageInstructionModel implements LightKeeperEventList
 		this.eventListeners.forEach(l -> l.addException(exc));		
 	}
 	
+	protected ArrayList<LightKeeperCoverageModelListener> modelListeners = new ArrayList<LightKeeperCoverageModelListener>();
+	
+	public void addModelListener(LightKeeperCoverageModelListener listener) {
+		modelListeners.add(listener);
+	}
+	
 	protected LightKeeperPlugin plugin;
 	protected LightKeeperCoverageRangeCollection modelRanges;
 	protected Set<AddressRange> hits = new HashSet<AddressRange>();
-	protected ArrayList<LightKeeperCoverageInstructionModelListener> modelListeners = new ArrayList<LightKeeperCoverageInstructionModelListener>();
+	
 	
 	public LightKeeperCoverageInstructionModel(LightKeeperPlugin plugin) {
 		this.plugin = plugin;	
@@ -80,17 +87,19 @@ public class LightKeeperCoverageInstructionModel implements LightKeeperEventList
 				this.hits.add(instructionRange);
 			}
 		}
-		modelListeners.forEach(l -> l.instructionsChanged());
+		this.notifyUpdate(monitor);
 	}
 	
-	public void addInstructionModelListener(LightKeeperCoverageInstructionModelListener listener) {
-		modelListeners.add(listener);
-	}
-	
-	public void clear() {
+	public void clear(TaskMonitor monitor) throws CancelledException {
 		this.modelRanges = null;
 		this.hits = new HashSet<AddressRange>();
-		modelListeners.forEach(l -> l.instructionsChanged());
+		this.notifyUpdate(monitor);
+	}
+	
+	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
+		for (LightKeeperCoverageModelListener listener: this.modelListeners) {
+			listener.modelChanged(monitor);
+		}
 	}
 	
 	public Set<AddressRange> getHits() {

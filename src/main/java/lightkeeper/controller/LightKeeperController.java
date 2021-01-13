@@ -22,9 +22,9 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.LightKeeperFile;
+import lightkeeper.model.LightKeeperCoverageModelListener;
 import lightkeeper.model.LightKeeperCoverageRangeCollection;
 import lightkeeper.model.instruction.LightKeeperCoverageInstructionModel;
-import lightkeeper.model.instruction.LightKeeperCoverageInstructionModelListener;
 import lightkeeper.model.table.LightKeeperCoverageTableModel;
 import lightkeeper.model.table.LightKeeperCoverageTableModelRow;
 
@@ -39,16 +39,10 @@ public class LightKeeperController implements LightKeeperEventListener {
 		this.instructionModel = instructionModel;
 		tableModel.addListener(this);
 		instructionModel.addListener(this);
-		this.instructionModel.addInstructionModelListener(new LightKeeperCoverageInstructionModelListener() {
+		this.instructionModel.addModelListener(new LightKeeperCoverageModelListener() {
 			@Override
-			public void instructionsChanged() {
-				Task task = new Task("Clear Coverage Data", true, true, true){
-					@Override
-					public void run(TaskMonitor monitor) throws CancelledException {
-						colour(monitor);
-					}
-				};
-				TaskLauncher.launch(task);
+			public void modelChanged(TaskMonitor monitor) throws CancelledException {
+				colour(monitor);
 			}
 		});
 	}
@@ -161,8 +155,8 @@ public class LightKeeperController implements LightKeeperEventListener {
 		monitor.setMessage("Clearing");
 		this.addMessage("Clearing");		
 		monitor.setProgress(0);
-		this.tableModel.clear();
-		this.instructionModel.clear();
+		this.tableModel.clear(monitor);
+		this.instructionModel.clear(monitor);
 		this.addMessage("Completed");
 		monitor.setProgress(100);
 	}

@@ -24,22 +24,10 @@ import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.LightKeeperEventListener;
+import lightkeeper.model.LightKeeperCoverageModelListener;
 import lightkeeper.model.LightKeeperCoverageRangeCollection;
 
-public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<LightKeeperCoverageTableModelRow> implements LightKeeperEventListener {
-	private String[] columnNames = {
-		"Coverage %",
-		"Function Name",
-		"Address",
-		"Blocks Hit",
-		"Instructions Hit",
-		"Function Size"
-    };
-
-	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageRangeCollection modelRanges;
-	protected ArrayList<LightKeeperCoverageTableModelRow> rows = new ArrayList<LightKeeperCoverageTableModelRow>();
-	
+public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<LightKeeperCoverageTableModelRow> implements LightKeeperEventListener {	
 	private List<LightKeeperEventListener> listeners = new ArrayList<LightKeeperEventListener>();
 	
 	public void addListener(LightKeeperEventListener listener) {
@@ -60,6 +48,25 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 	public void addException(Exception exc) {
 		this.listeners.forEach(l -> l.addException(exc));		
 	}
+	
+	protected ArrayList<LightKeeperCoverageModelListener> modelListeners = new ArrayList<LightKeeperCoverageModelListener>();
+	
+	public void addModelListener(LightKeeperCoverageModelListener listener) {
+		modelListeners.add(listener);
+	}
+	
+	private String[] columnNames = {
+		"Coverage %",
+		"Function Name",
+		"Address",
+		"Blocks Hit",
+		"Instructions Hit",
+		"Function Size"
+    };
+
+	protected LightKeeperPlugin plugin;
+	protected LightKeeperCoverageRangeCollection modelRanges;
+	protected ArrayList<LightKeeperCoverageTableModelRow> rows = new ArrayList<LightKeeperCoverageTableModelRow>();
 	
 	public LightKeeperCoverageTableModel(LightKeeperPlugin plugin) {
 		super();
@@ -86,10 +93,11 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 		monitor.setMessage("Processing complete");
 		this.addMessage("Processing complete");
 		monitor.checkCanceled();	
-		fireTableDataChanged();
+		this.notifyUpdate(monitor);
 	}
 	
 	public void processRanges(TaskMonitor monitor) throws CancelledException {
+		this.rows = new ArrayList<LightKeeperCoverageTableModelRow>();
 		HashMap<Function, Set<AddressRange>> functions = new HashMap<Function, Set<AddressRange>>();
 		Set<AddressRange> unassigned = new HashSet<AddressRange>();
 		FlatProgramAPI api = this.plugin.getApi();
@@ -223,10 +231,17 @@ public class LightKeeperCoverageTableModel extends AbstractSortedTableModel<Ligh
 		}
 	}
 	
-	public void clear() {
+	public void clear(TaskMonitor monitor) throws CancelledException{
 		this.modelRanges = null;
 		this.rows = new ArrayList<LightKeeperCoverageTableModelRow>();
-		fireTableDataChanged();
+		this.notifyUpdate(monitor);
+	}
+	
+	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
+		this.fireTableDataChanged();
+		for (LightKeeperCoverageModelListener listener: this.modelListeners) {
+			listener.modelChanged(monitor);
+		}
 	}
 	
 	@Override
