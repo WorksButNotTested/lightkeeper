@@ -4,60 +4,62 @@ public class BlockEntry {
 	protected long start;
 	protected int size;
 	protected int module;
-	
+
 	public BlockEntry(long start, int size, int module) {
 		this.start = start;
 		this.size = size;
 		this.module = module;
 	}
-	
+
 	@Override
 	public String toString() {
-		String str = String.format("start: %x, size: %d, module: %d", this.start, this.size, this.module);
+		var str = String.format("start: %x, size: %d, module: %d", start, size, module);
 		return str;
 	}
-	
+
 	public long getStart() {
-		return this.start;
+		return start;
 	}
-	
+
 	public int getSize() {
-		return this.size;
+		return size;
 	}
-	
+
 	public long getEnd() {
-		return this.start + this.size;
+		return start + size;
 	}
-	
+
 	public int getModule() {
-		return this.module;
+		return module;
 	}
-	
+
 	@Override
-    public boolean equals(Object o) {    
-        if (o == this) { 
-            return true; 
-        } 
-  
-        if (!(o instanceof BlockEntry)) { 
-            return false; 
-        } 
-            
-        BlockEntry e = (BlockEntry) o; 
-        if (e.getModule() != this.getModule())
-        	return false;
-        
-        if (e.getStart() != this.getStart())
-    		return false;
-        
-        return true; 
-    } 
-	
+	public boolean equals(Object o) {
+		if (o == this) {
+			return true;
+		}
+
+		if (!(o instanceof BlockEntry)) {
+			return false;
+		}
+
+		var e = (BlockEntry) o;
+		if (e.getModule() != getModule()) {
+			return false;
+		}
+
+		if (e.getStart() != getStart()) {
+			return false;
+		}
+
+		return true;
+	}
+
 	@Override
-    public int hashCode() {
-		int hash = 17;
-		hash = hash * 23 + Integer.valueOf(this.module).hashCode();
-		hash = hash * 23 + Long.valueOf(this.start).hashCode();
+	public int hashCode() {
+		var hash = 17;
+		hash = hash * 23 + Integer.valueOf(module).hashCode();
+		hash = hash * 23 + Long.valueOf(start).hashCode();
 		return hash;
 	}
 }

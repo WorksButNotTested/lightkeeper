@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,12 +31,12 @@ import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
 @PluginInfo(
-	status = PluginStatus.STABLE,
-	packageName = "light keeper",
-	category = PluginCategoryNames.MISC,
-	shortDescription = "Plugin for visualization of DynamoRio coverage data.",
-	description = "Plugin for visualization of DynamoRio coverage data."
-)
+		status = PluginStatus.STABLE,
+		packageName = "light keeper",
+		category = PluginCategoryNames.MISC,
+		shortDescription = "Plugin for visualization of DynamoRio coverage data.",
+		description = "Plugin for visualization of DynamoRio coverage data."
+		)
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 	protected CoverageModel coverageModel;
@@ -55,26 +55,26 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		instructionModel = new CoverageInstructionModel(this, coverageModel);
 		coverageModel.addModelListener(tableModel);
 		coverageModel.addModelListener(instructionModel);
-		controller = new Controller(this, this.coverageModel, this.tableModel, this.instructionModel);
+		controller = new Controller(this, coverageModel, tableModel, instructionModel);
 		tableModel.addListener(controller);
 		instructionModel.addListener(controller);
 		instructionModel.addModelListener(controller);
-		disassemblyController = new DisassemblyController(this, this.instructionModel);		
-		provider = new LightKeeperProvider(this, this.controller,  this.tableModel, "Light Keeper");
+		disassemblyController = new DisassemblyController(this, instructionModel);
+		provider = new LightKeeperProvider(this, controller,  tableModel, "Light Keeper");
 	}
 
 	@Override
 	public void init() {
 		super.init();
 	}
-	
+
 	@Override
 	public void programActivated(Program activatedProgram) {
-		this.program = activatedProgram;
-		this.api = new FlatProgramAPI(activatedProgram);
+		program = activatedProgram;
+		api = new FlatProgramAPI(activatedProgram);
 	}
-	
+
 	public FlatProgramAPI getApi() {
-		return this.api;
+		return api;
 	}
 }

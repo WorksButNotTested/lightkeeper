@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ghidra.util.exception.CancelledException;
@@ -13,32 +12,32 @@ import lightkeeper.controller.IEventListener;
 import lightkeeper.io.BinaryLineReader;
 
 public class ModuleReader {
-//	Columns: id, containing_id, start, end, entry, offset, path
+	//	Columns: id, containing_id, start, end, entry, offset, path
 	protected final String COLUMN_2_HDR_WIN = "Columns: id, base, end, entry, checksum, timestamp, path";
 	protected final Pattern COLUMN_2_HDR_WIN_FMT = Pattern.compile("^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<checksum>[0-9a-fA-F]+), (0x)?(?<timestamp>[0-9a-fA-F]+), (?<path>.+)$");
-	
+
 	protected final String COLUMN_2_HDR_LINUX = "Columns: id, base, end, entry, path";
 	protected final Pattern COLUMN_2_HDR_LINUX_FMT = null;
-	
+
 	protected final String COLUMN_3_HDR_WIN = "Columns: id, containing_id, start, end, entry, checksum, timestamp, path";
 	protected final Pattern COLUMN_3_HDR_WIN_FMT = null;
-	
+
 	protected final String COLUMN_3_HDR_LINUX = "Columns: id, containing_id, start, end, entry, path";
 	protected final Pattern COLUMN_3_HDR_LINUX_FMT = null;
-	
+
 	protected final String COLUMN_4_HDR_WIN = "Columns: id, containing_id, start, end, entry, offset, checksum, timestamp, path";
 	protected final Pattern COLUMN_4_HDR_WIN_FMT = null;
-	
+
 	protected final String COLUMN_4_HDR_LINUX = "Columns: id, containing_id, start, end, entry, offset, path";
 	protected final Pattern COLUMN_4_HDR_LINUX_FMT = Pattern.compile("^\\s*(?<id>\\d+), \\s*(?<containingid>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<offset>[0-9a-fA-F]+), (?<path>.+)$");
-	
-	private List<IEventListener> listeners = new ArrayList<IEventListener>();
+
+	private List<IEventListener> listeners = new ArrayList<>();
 	protected TaskMonitor monitor;
 	protected BinaryLineReader reader;
 	protected String columnHeader;
-	protected final ArrayList<ModuleTriplet> formats = new ArrayList<ModuleTriplet>();
+	protected final ArrayList<ModuleTriplet> formats = new ArrayList<>();
 	protected ModuleTriplet selectedModuleTriplet;
-	
+
 	private static class ModuleTriplet
 	{
 		protected int version;
@@ -46,7 +45,7 @@ public class ModuleReader {
 		protected Pattern regex;
 		protected boolean hasContainingId;
 		protected boolean hasChecksumTimeStamp;
-		
+
 		public ModuleTriplet (int version, String header, Pattern regex, boolean hasContainingId, boolean hasChecksumTimeStamp) {
 			this.version = version;
 			this.header = header;
@@ -55,94 +54,97 @@ public class ModuleReader {
 			this.hasChecksumTimeStamp = hasChecksumTimeStamp;
 		}
 	}
-	
-	public ModuleReader(TaskMonitor monitor, BinaryLineReader reader, int tableVersion) throws CancelledException, IOException {		
+
+	public ModuleReader(TaskMonitor monitor, BinaryLineReader reader, int tableVersion) throws CancelledException, IOException {
 		this.monitor = monitor;
 		this.reader = reader;
-		
+
 		formats.add(new ModuleTriplet (2, COLUMN_2_HDR_WIN, COLUMN_2_HDR_WIN_FMT, false, true));
 		formats.add(new ModuleTriplet (2, COLUMN_2_HDR_LINUX, COLUMN_2_HDR_LINUX_FMT, false, false));
 		formats.add(new ModuleTriplet (3, COLUMN_3_HDR_WIN, COLUMN_3_HDR_WIN_FMT, true, true));
 		formats.add(new ModuleTriplet (3, COLUMN_3_HDR_LINUX, COLUMN_3_HDR_LINUX_FMT, true, false));
 		formats.add(new ModuleTriplet (4, COLUMN_4_HDR_WIN, COLUMN_4_HDR_WIN_FMT, true, true));
 		formats.add(new ModuleTriplet (4, COLUMN_4_HDR_LINUX, COLUMN_4_HDR_LINUX_FMT, true, false));
-		
-		this.readColumnHeader();
-		
+
+		readColumnHeader();
+
 		formats.removeIf(t -> t.version != tableVersion);
-		formats.removeIf(t -> !t.header.equals(this.columnHeader));
-		
-		if (formats.size() != 1)
-			throw new IOException(String.format("Failed to find valid header: '%s' for version: %d", this.columnHeader, tableVersion));
-		
-		this.selectedModuleTriplet = formats.get(0);
-		if (this.selectedModuleTriplet.regex == null)
+		formats.removeIf(t -> !t.header.equals(columnHeader));
+
+		if (formats.size() != 1) {
+			throw new IOException(String.format("Failed to find valid header: '%s' for version: %d", columnHeader, tableVersion));
+		}
+
+		selectedModuleTriplet = formats.get(0);
+		if (selectedModuleTriplet.regex == null) {
 			throw new IOException (String.format("Unsupported pattern: '%s'", formats.get(0).header));
+		}
 	}
-	
+
 	public void addListener(IEventListener listener) {
-		this.listeners.add(listener);
+		listeners.add(listener);
 	}
-	
+
 	protected void addMessage(String message) {
-		this.listeners.forEach(l -> l.addMessage(message));
+		listeners.forEach(l -> l.addMessage(message));
 	}
-	
+
 	private void readColumnHeader() throws CancelledException, IOException {
-		this.monitor.checkCanceled();
-		this.monitor.setMessage("Reading Column Header");
-		this.columnHeader = this.reader.readLine();
-		this.addMessage(columnHeader);
-	}	
-	
+		monitor.checkCanceled();
+		monitor.setMessage("Reading Column Header");
+		columnHeader = reader.readLine();
+		addMessage(columnHeader);
+	}
+
 	public ModuleEntry read() throws CancelledException, IOException {
-		this.monitor.checkCanceled();
-		String moduleLine = this.reader.readLine();
-		this.addMessage(moduleLine);
-		
-		Matcher moduleMatcher = this.selectedModuleTriplet.regex.matcher(moduleLine);
-		if (!moduleMatcher.matches())
+		monitor.checkCanceled();
+		var moduleLine = reader.readLine();
+		addMessage(moduleLine);
+
+		var moduleMatcher = selectedModuleTriplet.regex.matcher(moduleLine);
+		if (!moduleMatcher.matches()) {
 			throw new IOException(String.format("Invalid module: '%s'", moduleMatcher));
-	
-		String idString = moduleMatcher.group("id");
+		}
+
+		var idString = moduleMatcher.group("id");
 		int id = parseNumber(idString, Integer::parseInt, String.format("Invalid id: %s", idString));
-	
-		int containingId = id;
-		if (this.selectedModuleTriplet.hasContainingId) {
-			String containingIdString = moduleMatcher.group("containingid");
+
+		var containingId = id;
+		if (selectedModuleTriplet.hasContainingId) {
+			var containingIdString = moduleMatcher.group("containingid");
 			containingId = parseNumber(containingIdString, Integer::parseInt, String.format("Invalid containing_id: %s", containingIdString));
 		}
-		
-		String startString = moduleMatcher.group("start");
-		long start = parseNumber(startString, (s) -> Long.parseLong(s, 16), String.format("Invalid start: %s", startString));
-		
-		String endString = moduleMatcher.group("end");
-		long end = parseNumber(endString, (s) -> Long.parseLong(s, 16), String.format("Invalid start: %s", endString));
-		
-		String entryString = moduleMatcher.group("entry");
-		long entry = parseNumber(entryString, (s) -> Long.parseLong(s, 16), String.format("Invalid entry: %s", entryString));
-		
-		long checksum = 0;
-		long timeStamp = 0;
-		if (this.selectedModuleTriplet.hasChecksumTimeStamp) {
-			String checksumString = moduleMatcher.group("checksum");
-			checksum = parseNumber(checksumString, (s) -> Long.parseLong(s, 16), String.format("Invalid checksum: %s", checksumString));
-			
-			String timeStampString = moduleMatcher.group("timestamp");
-			timeStamp = parseNumber(timeStampString, (s) -> Long.parseLong(s, 16), String.format("Invalid time stamp: %s", timeStampString));
+
+		var startString = moduleMatcher.group("start");
+		long start = parseNumber(startString, s -> Long.parseLong(s, 16), String.format("Invalid start: %s", startString));
+
+		var endString = moduleMatcher.group("end");
+		long end = parseNumber(endString, s -> Long.parseLong(s, 16), String.format("Invalid start: %s", endString));
+
+		var entryString = moduleMatcher.group("entry");
+		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16), String.format("Invalid entry: %s", entryString));
+
+		var checksum = 0L;
+		var timeStamp = 0L;
+		if (selectedModuleTriplet.hasChecksumTimeStamp) {
+			var checksumString = moduleMatcher.group("checksum");
+			checksum = parseNumber(checksumString, s -> Long.parseLong(s, 16), String.format("Invalid checksum: %s", checksumString));
+
+			var timeStampString = moduleMatcher.group("timestamp");
+			timeStamp = parseNumber(timeStampString, s -> Long.parseLong(s, 16), String.format("Invalid time stamp: %s", timeStampString));
 		}
-		
-		String pathString = moduleMatcher.group("path");
-		
-		ModuleEntry module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
-		this.addMessage(String.format("Read Module: %s", module));
-		this.monitor.checkCanceled();
-		return module;		
+
+		var pathString = moduleMatcher.group("path");
+
+		var module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
+		addMessage(String.format("Read Module: %s", module));
+		monitor.checkCanceled();
+		return module;
 	}
-	
+
 	private <T> T parseNumber(String numberString, Function<String, T> convert, String failMessage) throws IOException {
 		try {
-			T result = convert.apply(numberString);
+			var result = convert.apply(numberString);
 			return result;
 		} catch (NumberFormatException e) {
 			throw new IOException(failMessage, e);

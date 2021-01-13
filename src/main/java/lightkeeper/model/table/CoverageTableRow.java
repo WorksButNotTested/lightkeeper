@@ -6,37 +6,37 @@ public class CoverageTableRow {
 	protected CoverageFraction blocks;
 	protected CoverageFraction instructions;
 	protected long functionSize;
-	
-	
+
+
 	public CoverageTableRow (String name, long address, CoverageFraction blocks, CoverageFraction instructions, long functionSize) {
 		this.name = name;
 		this.address = address;
 		this.blocks = blocks;
 		this.instructions = instructions;
-		this.functionSize = functionSize;			
+		this.functionSize = functionSize;
 	}
-	
+
 	public CoveragePercentage getCoverage() {
-		return new CoveragePercentage(this.instructions);
+		return new CoveragePercentage(instructions);
 	}
-	
+
 	public long getAddress() {
-		return this.address;
+		return address;
 	}
-	
+
 	public String getName() {
-		return this.name;
+		return name;
 	}
-			
+
 	public CoverageFraction getBlocks() {
-		return this.blocks;
+		return blocks;
 	}
-	
+
 	public CoverageFraction getInstructions() {
-		return this.instructions;
+		return instructions;
 	}
-	
+
 	public long getFunctionSize() {
-		return this.functionSize;
+		return functionSize;
 	}
 }

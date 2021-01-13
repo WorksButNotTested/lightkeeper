@@ -30,13 +30,13 @@ public class CountedByteProvider implements ByteProvider {
 	public InputStream getUnderlyingInputStream() {
 		return inputStream;
 	}
-	
+
 	public long getPosition() {
-		return this.currentIndex;
+		return currentIndex;
 	}
-	
+
 	public long getLength() {
-		return this.length;
+		return length;
 	}
 
 	@Override
@@ -77,7 +77,7 @@ public class CountedByteProvider implements ByteProvider {
 			}
 		}
 
-		int value = inputStream.read();
+		var value = inputStream.read();
 		if (value == -1) {
 			throw new EOFException();
 		}
@@ -97,8 +97,8 @@ public class CountedByteProvider implements ByteProvider {
 			}
 		}
 
-		byte[] values = new byte[(int) len];
-		int nRead = inputStream.read(values);
+		var values = new byte[(int) len];
+		var nRead = inputStream.read(values);
 		if (nRead != len) {
 			throw new EOFException();
 		}

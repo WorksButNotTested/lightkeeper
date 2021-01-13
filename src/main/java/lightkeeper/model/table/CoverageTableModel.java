@@ -3,261 +3,261 @@ package lightkeeper.model.table;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import docking.widgets.table.AbstractSortedTableModel;
-import docking.widgets.table.TableSortStateEditor;
 import docking.widgets.table.ColumnSortState.SortDirection;
-import ghidra.program.flatapi.FlatProgramAPI;
-import ghidra.program.model.address.Address;
+import docking.widgets.table.TableSortStateEditor;
 import ghidra.program.model.address.AddressRange;
-import ghidra.program.model.address.AddressSetView;
 import ghidra.program.model.block.BasicBlockModel;
-import ghidra.program.model.block.CodeBlock;
-import ghidra.program.model.block.CodeBlockIterator;
 import ghidra.program.model.listing.Function;
-import ghidra.program.model.listing.Instruction;
-import ghidra.program.model.listing.InstructionIterator;
-import ghidra.program.model.listing.Listing;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.IEventListener;
-import lightkeeper.model.ICoverageModelListener;
-import lightkeeper.model.CoverageFileRanges;
 import lightkeeper.model.CoverageModel;
 import lightkeeper.model.ICoverageModel;
+import lightkeeper.model.ICoverageModelListener;
+import lightkeeper.model.ranges.CoverageFileRanges;
 
-public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<CoverageFileRanges, ArrayList<CoverageTableRow>>, ICoverageModelListener {	
-	private ArrayList<IEventListener> listeners = new ArrayList<IEventListener>();
-	
+public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<CoverageFileRanges, ArrayList<CoverageTableRow>>, ICoverageModelListener {
+	private ArrayList<IEventListener> listeners = new ArrayList<>();
+
 	public void addListener(IEventListener listener) {
-		this.listeners.add(listener);
+		listeners.add(listener);
 	}
-	
+
 	@Override
 	public void addMessage(String message) {
-		this.listeners.forEach(l -> l.addMessage(message));
+		listeners.forEach(l -> l.addMessage(message));
 	}
-	
+
 	@Override
 	public void addErrorMessage(String message) {
-		this.listeners.forEach(l -> l.addErrorMessage(message));
+		listeners.forEach(l -> l.addErrorMessage(message));
 	}
 
 	@Override
 	public void addException(Exception exc) {
-		this.listeners.forEach(l -> l.addException(exc));		
+		listeners.forEach(l -> l.addException(exc));
 	}
-	
-	protected ArrayList<ICoverageModelListener> modelListeners = new ArrayList<ICoverageModelListener>();
-	
+
+	protected ArrayList<ICoverageModelListener> modelListeners = new ArrayList<>();
+
+	@Override
 	public void addModelListener(ICoverageModelListener listener) {
 		modelListeners.add(listener);
 	}
-	
+
 	private String[] columnNames = {
-		"Coverage %",
-		"Function Name",
-		"Address",
-		"Blocks Hit",
-		"Instructions Hit",
-		"Function Size"
-    };
+			"Coverage %",
+			"Function Name",
+			"Address",
+			"Blocks Hit",
+			"Instructions Hit",
+			"Function Size"
+	};
 
 	protected LightKeeperPlugin plugin;
 	protected CoverageModel coverage;
 	protected CoverageFileRanges modelRanges;
-	protected ArrayList<CoverageTableRow> rows = new ArrayList<CoverageTableRow>();
-	
+	protected ArrayList<CoverageTableRow> rows = new ArrayList<>();
+
 	public CoverageTableModel(LightKeeperPlugin plugin, CoverageModel coverage) {
-		super();
-		this.plugin = plugin;		
+		this.plugin = plugin;
 		this.coverage = coverage;
-		TableSortStateEditor tableSortStateEditor = new TableSortStateEditor();
+		var tableSortStateEditor = new TableSortStateEditor();
 		tableSortStateEditor.addSortedColumn(0, SortDirection.DESCENDING);
 		tableSortStateEditor.addSortedColumn(2);
-		this.setTableSortState(tableSortStateEditor.createTableSortState());
-	}
-	
-	public void load(CoverageFileRanges ranges) {
-		this.modelRanges = ranges;
+		setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 
+	@Override
+	public void load(CoverageFileRanges ranges) {
+		modelRanges = ranges;
+	}
+
+	@Override
 	public void update(TaskMonitor monitor) throws CancelledException
 	{
-		if (this.modelRanges == null)
+		if (modelRanges == null) {
 			return;
-		
+		}
+
 		monitor.checkCanceled();
-		
-		this.processRanges(monitor);
-		
+
+		processRanges(monitor);
+
 		monitor.setMessage("Processing complete");
-		this.addMessage("Processing complete");
-		monitor.checkCanceled();	
-		this.notifyUpdate(monitor);
+		addMessage("Processing complete");
+		monitor.checkCanceled();
+		notifyUpdate(monitor);
 	}
-	
+
 	public void processRanges(TaskMonitor monitor) throws CancelledException {
-		this.rows = new ArrayList<CoverageTableRow>();
-		HashMap<Function, Set<AddressRange>> functions = new HashMap<Function, Set<AddressRange>>();
-		Set<AddressRange> unassigned = new HashSet<AddressRange>();
-		FlatProgramAPI api = this.plugin.getApi();
-		ArrayList<AddressRange> ranges = modelRanges.getRanges();
-		for (int i = 0; i < ranges.size(); i++)
+		rows = new ArrayList<>();
+		var functions = new HashMap<Function, Set<AddressRange>>();
+		Set<AddressRange> unassigned = new HashSet<>();
+		var api = plugin.getApi();
+		var ranges = modelRanges.getRanges();
+		for (var i = 0; i < ranges.size(); i++)
 		{
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing block %d / %d", i, ranges.size()));
-			AddressRange range = ranges.get(i);
-			
-			Function function = api.getFunctionContaining(range.getMinAddress());
+			var range = ranges.get(i);
+
+			var function = api.getFunctionContaining(range.getMinAddress());
 			if (function == null) {
-				this.addMessage(String.format("No function found at: %x", range.getMinAddress().getOffset()));
+				addMessage(String.format("No function found at: %x", range.getMinAddress().getOffset()));
 				unassigned.add(range);
 			} else {
-				this.addMessage(String.format("Found function: '%s' at: %x", function.getName(), range.getMinAddress().getOffset()));
-				Set<AddressRange> set = functions.get(function);
+				addMessage(String.format("Found function: '%s' at: %x", function.getName(), range.getMinAddress().getOffset()));
+				var set = functions.get(function);
 				if (set == null) {
-					set = new HashSet<AddressRange>();
+					set = new HashSet<>();
 					functions.put(function, set);
 				}
 				set.add(range);
 			}
-		}	
-		this.processFunctions(monitor, functions);
-		this.processUnassigned(monitor, unassigned);
+		}
+		processFunctions(monitor, functions);
+		processUnassigned(monitor, unassigned);
 	}
-	
+
 	public void processFunctions(TaskMonitor monitor, HashMap<Function, Set<AddressRange>> functions) throws CancelledException {
-		
-		Iterator<Function> functionIterator = functions.keySet().iterator();
-		int i = 0;
+
+		var functionIterator = functions.keySet().iterator();
+		var i = 0;
 		while (functionIterator.hasNext()) {
 			i++;
 			monitor.checkCanceled();
-			Function function = functionIterator.next();
-			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
-			this.addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.keySet().size()));
-			AddressSetView body = function.getBody();
-			Set<AddressRange> ranges = functions.get(function);
-			
-			CoverageFraction codeBlockInfo = this.processCodeBlocks(monitor, function, ranges);
-			CoverageFraction instructionInfo = this.processInstructions(monitor, function, ranges);
-			long functionSize = body.getMaxAddress().subtract(body.getMinAddress());
-			
-			CoverageTableRow row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(), 
+			var function = functionIterator.next();
+			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
+			addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
+			var body = function.getBody();
+			var ranges = functions.get(function);
+
+			var codeBlockInfo = processCodeBlocks(monitor, function, ranges);
+			var instructionInfo = processInstructions(monitor, function, ranges);
+			var functionSize = body.getMaxAddress().subtract(body.getMinAddress());
+
+			var row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(),
 					codeBlockInfo, instructionInfo, functionSize);
-			this.rows.add(row);
+			rows.add(row);
 		}
 	}
-	
+
 	public CoverageFraction processCodeBlocks(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
-		FlatProgramAPI api = this.plugin.getApi();
-		BasicBlockModel bbm = new BasicBlockModel(api.getCurrentProgram());
-		AddressSetView body = function.getBody();
-		CodeBlockIterator codeBlockIterator = bbm.getCodeBlocksContaining(body, monitor);
-		int codeBlocks = 0;
-		int hitCodeBlocks = 0;
+		var api = plugin.getApi();
+		var bbm = new BasicBlockModel(api.getCurrentProgram());
+		var body = function.getBody();
+		var codeBlockIterator = bbm.getCodeBlocksContaining(body, monitor);
+		var codeBlocks = 0;
+		var hitCodeBlocks = 0;
 		while (codeBlockIterator.hasNext()) {
 			monitor.checkCanceled();
 			codeBlocks++;
-			
+
 			monitor.setMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
-			this.addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
-			
-			CodeBlock cb = codeBlockIterator.next();
-			
-			Iterator<AddressRange> rangeIterator = ranges.iterator();				
-			while (rangeIterator.hasNext()) {			
+			addMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
+
+			var cb = codeBlockIterator.next();
+
+			var rangeIterator = ranges.iterator();
+			while (rangeIterator.hasNext()) {
 				monitor.checkCanceled();
-				
-				AddressRange range = rangeIterator.next();
-				if (range.getMinAddress().compareTo(cb.getMinAddress()) < 0)
+
+				var range = rangeIterator.next();
+				if (range.getMinAddress().compareTo(cb.getMinAddress()) < 0) {
 					continue;
-				
-				if (range.getMaxAddress().compareTo(cb.getMaxAddress()) > 0)
+				}
+
+				if (range.getMaxAddress().compareTo(cb.getMaxAddress()) > 0) {
 					continue;
-				
-				hitCodeBlocks++;								
+				}
+
+				hitCodeBlocks++;
 			}
 		}
 		return new CoverageFraction(hitCodeBlocks, codeBlocks);
 	}
-	
+
 	public CoverageFraction processInstructions(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
-		FlatProgramAPI api = this.plugin.getApi();
-		Listing listing = api.getCurrentProgram().getListing();
-		AddressSetView body = function.getBody();
-		InstructionIterator instructionIterator = listing.getInstructions(body, true);
-		int instructions = 0;
-		int hitInstructions = 0;
+		var api = plugin.getApi();
+		var listing = api.getCurrentProgram().getListing();
+		var body = function.getBody();
+		var instructionIterator = listing.getInstructions(body, true);
+		var instructions = 0;
+		var hitInstructions = 0;
 		while (instructionIterator.hasNext()) {
 			monitor.checkCanceled();
 			instructions++;
 			monitor.setMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
-			this.addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
-			
-			Instruction instruction = instructionIterator.next();
-			Iterator<AddressRange> rangeIterator = ranges.iterator();
+			addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
+
+			var instruction = instructionIterator.next();
+			var rangeIterator = ranges.iterator();
 			while (rangeIterator.hasNext()) {
 				monitor.checkCanceled();
-				AddressRange range = rangeIterator.next();
-				
-				if (instruction.getMinAddress().compareTo(range.getMinAddress()) < 0)
+				var range = rangeIterator.next();
+
+				if (instruction.getMinAddress().compareTo(range.getMinAddress()) < 0) {
 					continue;
-				
-				if (instruction.getMaxAddress().compareTo(range.getMaxAddress()) > 0)
+				}
+
+				if (instruction.getMaxAddress().compareTo(range.getMaxAddress()) > 0) {
 					continue;
-				
-				
-				hitInstructions++;										
+				}
+
+
+				hitInstructions++;
 			}
 		}
 		return new CoverageFraction(hitInstructions, instructions);
 	}
-	
-	public void processUnassigned(TaskMonitor monitor, Set<AddressRange> unassigned) throws CancelledException {		
-		Iterator<AddressRange> iterator = unassigned.iterator();
-		int i = 0;
+
+	public void processUnassigned(TaskMonitor monitor, Set<AddressRange> unassigned) throws CancelledException {
+		var iterator = unassigned.iterator();
+		var i = 0;
 		while (iterator.hasNext()) {
 			i++;
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
-			this.addMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
-			AddressRange range = iterator.next();
-			Address addr = range.getMinAddress();
-			String name = String.format("_unknown_%x", addr.getOffset());
-			CoverageFraction zeroFraction = new CoverageFraction(0, 0);
-			CoverageTableRow row = new CoverageTableRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
-			this.rows.add(row);
+			addMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
+			var range = iterator.next();
+			var addr = range.getMinAddress();
+			var name = String.format("_unknown_%x", addr.getOffset());
+			var zeroFraction = new CoverageFraction(0, 0);
+			var row = new CoverageTableRow(name, addr.getOffset(), zeroFraction, zeroFraction, 0);
+			rows.add(row);
 		}
 	}
-	
+
+	@Override
 	public void clear(TaskMonitor monitor) throws CancelledException{
-		this.modelRanges = null;
-		this.rows = new ArrayList<CoverageTableRow>();
-		this.notifyUpdate(monitor);
+		modelRanges = null;
+		rows = new ArrayList<>();
+		notifyUpdate(monitor);
 	}
-	
+
 	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
-		this.fireTableDataChanged();
-		for (ICoverageModelListener listener: this.modelListeners) {
+		fireTableDataChanged();
+		for (ICoverageModelListener listener: modelListeners) {
 			listener.modelChanged(monitor);
 		}
 	}
-	
+
 	@Override
 	public boolean isSortable(int columnIndex) {
 		return true;
 	}
 
 	@Override
-	public int getColumnCount() { 
+	public int getColumnCount() {
 		return columnNames.length;
 	}
-	
+
+	@Override
 	public String getColumnName(int column) {
 		return columnNames[column];
 	}
@@ -269,33 +269,33 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 
 	@Override
 	public ArrayList<CoverageTableRow> getModelData() {
-		return this.rows;
+		return rows;
 	}
 
 	@Override
 	public Object getColumnValueForRow(CoverageTableRow row, int columnIndex) {
 		switch(columnIndex) {
-			case 0:
-				return row.getCoverage();
-			case 1:
-				return row.getName();
-			case 2:
-				return String.format("0x%x", row.getAddress());
-			case 3:
-				return row.getBlocks();
-			case 4:
-				return row.getInstructions();
-			case 5:
-				return row.getFunctionSize();
-			default:
-				throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
+		case 0:
+			return row.getCoverage();
+		case 1:
+			return row.getName();
+		case 2:
+			return String.format("0x%x", row.getAddress());
+		case 3:
+			return row.getBlocks();
+		case 4:
+			return row.getInstructions();
+		case 5:
+			return row.getFunctionSize();
+		default:
+			throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}
 	}
 
 	@Override
 	public void modelChanged(TaskMonitor monitor) throws CancelledException {
-		CoverageFileRanges ranges = this.coverage.getModelData();
-		this.load(ranges);
-		this.update(monitor);
+		var ranges = coverage.getModelData();
+		load(ranges);
+		update(monitor);
 	}
 }

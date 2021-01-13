@@ -10,10 +10,7 @@ import ghidra.app.decompiler.ClangToken;
 import ghidra.app.decompiler.component.ClangLayoutController;
 import ghidra.app.decompiler.component.DecompilerHighlightService;
 import ghidra.app.decompiler.component.DecompilerUtils;
-import ghidra.program.flatapi.FlatProgramAPI;
-import ghidra.program.model.address.Address;
 import ghidra.program.model.address.AddressRange;
-import ghidra.program.model.listing.Program;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
@@ -25,69 +22,73 @@ import lightkeeper.model.instruction.CoverageInstructionModel;
 @SuppressWarnings("deprecation")
 public class DisassemblyController {
 	protected LightKeeperPlugin plugin;
-	protected CoverageInstructionModel model;	
-	
+	protected CoverageInstructionModel model;
+
 	public DisassemblyController(LightKeeperPlugin plugin, CoverageInstructionModel model) {
 		this.plugin = plugin;
 		this.model = model;
-		
+
 		this.model.addModelListener(new ICoverageModelListener() {
 			@Override
 			public void modelChanged(TaskMonitor monitor) throws CancelledException {
-				instructionModelChanged(monitor);				
-			}
-		});			
-	}
-	
-	public void instructionModelChanged(TaskMonitor monitor) throws CancelledException {
-		DecompilerHighlightService highlightService = plugin.getTool().getService(DecompilerHighlightService.class);
-		if (highlightService == null)
-			return;
-		
-		ClangLayoutController controller = highlightService.getLayoutModel();
-		controller.addLayoutModelListener(new LayoutModelListener() {
-			
-			@Override
-			public void modelSizeChanged(IndexMapper indexMapper) {
-				updatedModel(controller);				
-			}
-			
-			@Override
-			public void dataChanged(BigInteger start, BigInteger end) {
-				updatedModel(controller);			
+				instructionModelChanged(monitor);
 			}
 		});
-		
+	}
+
+	public void instructionModelChanged(TaskMonitor monitor) throws CancelledException {
+		var highlightService = plugin.getTool().getService(DecompilerHighlightService.class);
+		if (highlightService == null) {
+			return;
+		}
+
+		var controller = highlightService.getLayoutModel();
+		controller.addLayoutModelListener(new LayoutModelListener() {
+
+			@Override
+			public void modelSizeChanged(IndexMapper indexMapper) {
+				updatedModel(controller);
+			}
+
+			@Override
+			public void dataChanged(BigInteger start, BigInteger end) {
+				updatedModel(controller);
+			}
+		});
+
 		updateCoverage(monitor, controller);
 	}
-		
-	public void updateCoverage(TaskMonitor monitor, ClangLayoutController controller) throws CancelledException {			
-		FlatProgramAPI api = plugin.getApi();
-		if (api == null)
+
+	public void updateCoverage(TaskMonitor monitor, ClangLayoutController controller) throws CancelledException {
+		var api = plugin.getApi();
+		if (api == null) {
 			return;
-		
-		Program program = api.getCurrentProgram();						
-					
+		}
+
+		var program = api.getCurrentProgram();
+
 		for (ClangLine line: controller.getLines())
 		{
 			for (ClangToken token: line.getAllTokens())
 			{
 				monitor.checkCanceled();
-				Address address = DecompilerUtils.getClosestAddress(program, token);
-				if (address == null)
+				var address = DecompilerUtils.getClosestAddress(program, token);
+				if (address == null) {
 					continue;
+				}
 				for (AddressRange range: model.getModelData())
 				{
 					monitor.checkCanceled();
-					if (!range.contains(address))
+					if (!range.contains(address)) {
 						continue;
-					
-					token.setHighlight(Color.GREEN);	
-				}											
+					}
+
+					token.setHighlight(Color.GREEN);
+				}
 			}
-		}					
+		}
 	}
-	
+
 	public void updatedModel(ClangLayoutController controller) {
 		Task task = new Task("Clear Coverage Data", true, true, true){
 			@Override
