@@ -1,8 +1,8 @@
-module/.gradle/
-module/.classpath
-module/.project
-module/.settings/
-module/bin/
-module/build/
-module/dist/
-module/dragondance.log
+lightkeeper/.gradle/
+lightkeeper/.classpath
+lightkeeper/.project
+lightkeeper/.settings/
+lightkeeper/bin/
+lightkeeper/build/
+lightkeeper/dist/
+lightkeeper/dragondance.log

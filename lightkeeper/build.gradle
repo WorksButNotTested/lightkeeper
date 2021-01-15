@@ -14,11 +14,16 @@
 // application.gradle.version property in <GHIDRA_INSTALL_DIR>/Ghidra/application.properties
 // for the correction version of Gradle to use for the Ghidra installation you specify.
 
-plugins {
-    id 'java'
 
-    // Where this plugin (or it's many dependencies) are not available then use git-info.gradle
-    id 'net.nemerosa.versioning' version '2.13.2'
+plugins {
+	id 'java'
+
+	// Where this plugin (or it's many dependencies) are not available then use git-info.gradle
+	id 'net.nemerosa.versioning' version '2.13.2'
+}
+
+versioning {
+    gitRepoRootDir = '../'
 }
 
 def builtBy = ""
