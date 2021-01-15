@@ -110,11 +110,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		setVisible(true);
 	}
 
+	private String getVersionFromManifest() {
+		try {
+			return getClass().getPackage().getImplementationVersion();
+		}catch(Exception e) {
+			return "version unknown";
+		}
+	}
+
 	private void createActions() {
 		DockingAction aboutAction = new DockingAction("About", getName()) {
 			@Override
 			public void actionPerformed(ActionContext context) {
-				Msg.showInfo(getClass(), panel, "About", "Light Keeper");
+				Msg.showInfo(getClass(), panel, "About", "Light Keeper: " + getVersionFromManifest());
 			}
 		};
 		aboutAction.setMenuBarData(

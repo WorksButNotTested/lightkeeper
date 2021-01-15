@@ -14,6 +14,36 @@
 // application.gradle.version property in <GHIDRA_INSTALL_DIR>/Ghidra/application.properties
 // for the correction version of Gradle to use for the Ghidra installation you specify.
 
+plugins {
+    id 'java'
+
+    // Where this plugin (or it's many dependencies) are not available then use git-info.gradle
+    id 'net.nemerosa.versioning' version '2.13.2'
+}
+
+def builtBy = ""
+if (System.env.GITHUB_ACTION) {
+	builtBy = "GitHub Action"
+}
+
+jar {
+	manifest {
+		attributes(
+			'Built-By'               : "$builtBy",
+			'Implementation-Version' : "$versioning.info.lastTag-$versioning.info.build",
+			'Git-Branch'             : "$versioning.info.branch",
+			'Git-Tag'                : "$versioning.info.tag",
+			'Git-Last-Tag'           : "$versioning.info.lastTag",
+			'Git-Dirty'              : "$versioning.info.dirty",
+			'Git-Tag-Major'          : "$versioning.info.versionNumber.major",
+			'Git-Tag-Minor'          : "$versioning.info.versionNumber.minor",
+			'Git-Tag-Patch'          : "$versioning.info.versionNumber.patch",
+			'Git-Commit-Hash'        : "$versioning.info.commit",
+			'Git-Commit-Hash-Short'  : "$versioning.info.build",
+		)
+	}
+}
+
 //----------------------START "DO NOT MODIFY" SECTION------------------------------
 def ghidraInstallDir
 
