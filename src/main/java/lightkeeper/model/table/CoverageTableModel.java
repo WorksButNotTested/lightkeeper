@@ -177,6 +177,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 				}
 
 				hitCodeBlocks++;
+				break;
 			}
 		}
 		return new CoverageFraction(hitCodeBlocks, codeBlocks);
@@ -209,8 +210,8 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 					continue;
 				}
 
-
 				hitInstructions++;
+				break;
 			}
 		}
 		return new CoverageFraction(hitInstructions, instructions);
