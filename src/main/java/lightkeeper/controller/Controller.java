@@ -73,7 +73,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 				monitor.checkCanceled();
 				var min = range.getMinAddress();
 				var max = range.getMaxAddress();
-				colorService.setBackgroundColor(min, max, Color.GREEN);
+				colorService.setBackgroundColor(min, max, Color.YELLOW);
 			}
 			completed = true;
 		} finally {
