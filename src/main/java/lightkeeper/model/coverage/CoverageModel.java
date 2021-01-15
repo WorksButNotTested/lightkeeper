@@ -68,7 +68,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 					}
 					var start = baseAddress.add(block.getStart());
 					AddressRange range = new AddressRangeImpl(start, block.getSize());
-					ranges.add(range);
+					fileRanges.add(range);
 				}
 				map.put(file, fileRanges);
 			}
