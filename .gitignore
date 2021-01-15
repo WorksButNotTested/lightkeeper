@@ -1,2 +1,8 @@
-bin/
-dragondance.log
+module/.gradle/
+module/.classpath
+module/.project
+module/.settings/
+module/bin/
+module/build/
+module/dist/
+module/dragondance.log
