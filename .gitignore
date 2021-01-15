@@ -1,7 +1,7 @@
 lightkeeper/.gradle/
-lightkeeper/.classpath
-lightkeeper/.project
-lightkeeper/.settings/
+# lightkeeper/.classpath
+# lightkeeper/.project
+# lightkeeper/.settings/
 lightkeeper/bin/
 lightkeeper/build/
 lightkeeper/dist/
