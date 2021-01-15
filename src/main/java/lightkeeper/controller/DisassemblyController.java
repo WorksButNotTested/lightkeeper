@@ -20,23 +20,17 @@ import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 
 @SuppressWarnings("deprecation")
-public class DisassemblyController {
+public class DisassemblyController implements ICoverageModelListener{
 	protected LightKeeperPlugin plugin;
 	protected CoverageInstructionModel model;
 
 	public DisassemblyController(LightKeeperPlugin plugin, CoverageInstructionModel model) {
 		this.plugin = plugin;
 		this.model = model;
-
-		this.model.addModelListener(new ICoverageModelListener() {
-			@Override
-			public void modelChanged(TaskMonitor monitor) throws CancelledException {
-				instructionModelChanged(monitor);
-			}
-		});
 	}
 
-	public void instructionModelChanged(TaskMonitor monitor) throws CancelledException {
+	@Override
+	public void modelChanged(TaskMonitor monitor) throws CancelledException {
 		var highlightService = plugin.getTool().getService(DecompilerHighlightService.class);
 		if (highlightService == null) {
 			return;
@@ -47,12 +41,12 @@ public class DisassemblyController {
 
 			@Override
 			public void modelSizeChanged(IndexMapper indexMapper) {
-				updatedModel(controller);
+				updateCoverageTask(controller);
 			}
 
 			@Override
 			public void dataChanged(BigInteger start, BigInteger end) {
-				updatedModel(controller);
+				updateCoverageTask(controller);
 			}
 		});
 
@@ -89,7 +83,7 @@ public class DisassemblyController {
 		}
 	}
 
-	public void updatedModel(ClangLayoutController controller) {
+	public void updateCoverageTask(ClangLayoutController controller) {
 		Task task = new Task("Clear Coverage Data", true, true, true){
 			@Override
 			public void run(TaskMonitor monitor) throws CancelledException {

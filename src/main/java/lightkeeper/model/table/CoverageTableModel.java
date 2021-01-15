@@ -6,70 +6,24 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import docking.widgets.table.AbstractSortedTableModel;
-import docking.widgets.table.ColumnSortState.SortDirection;
-import docking.widgets.table.TableSortStateEditor;
 import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.block.BasicBlockModel;
 import ghidra.program.model.listing.Function;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.IEventListener;
-import lightkeeper.model.ICoverageModel;
+import lightkeeper.model.AbstractCoverageModel;
 import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModel<HashSet<AddressRange>, ArrayList<CoverageTableRow>>, ICoverageModelListener {
-	private ArrayList<IEventListener> listeners = new ArrayList<>();
-
-	public void addListener(IEventListener listener) {
-		listeners.add(listener);
-	}
-
-	@Override
-	public void addMessage(String message) {
-		listeners.forEach(l -> l.addMessage(message));
-	}
-
-	@Override
-	public void addErrorMessage(String message) {
-		listeners.forEach(l -> l.addErrorMessage(message));
-	}
-
-	@Override
-	public void addException(Exception exc) {
-		listeners.forEach(l -> l.addException(exc));
-	}
-
-	protected ArrayList<ICoverageModelListener> modelListeners = new ArrayList<>();
-
-	@Override
-	public void addModelListener(ICoverageModelListener listener) {
-		modelListeners.add(listener);
-	}
-
-	private String[] columnNames = {
-			"Coverage %",
-			"Function Name",
-			"Address",
-			"Blocks Hit",
-			"Instructions Hit",
-			"Function Size"
-	};
-
-	protected LightKeeperPlugin plugin;
+public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRange>, ArrayList<CoverageTableRow>> implements ICoverageModelListener {	
 	protected CoverageModel coverage;
 	protected ArrayList<AddressRange> modelRanges;
 	protected ArrayList<CoverageTableRow> rows = new ArrayList<>();
 
 	public CoverageTableModel(LightKeeperPlugin plugin, CoverageModel coverage) {
-		this.plugin = plugin;
-		this.coverage = coverage;
-		var tableSortStateEditor = new TableSortStateEditor();
-		tableSortStateEditor.addSortedColumn(0, SortDirection.DESCENDING);
-		tableSortStateEditor.addSortedColumn(2);
-		setTableSortState(tableSortStateEditor.createTableSortState());
+		super(plugin);
+		this.coverage = coverage;	
 	}
 
 	@Override
@@ -240,57 +194,10 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 		rows = new ArrayList<>();
 		notifyUpdate(monitor);
 	}
-
-	protected void notifyUpdate(TaskMonitor monitor) throws CancelledException {
-		fireTableDataChanged();
-		for (ICoverageModelListener listener: modelListeners) {
-			listener.modelChanged(monitor);
-		}
-	}
-
-	@Override
-	public boolean isSortable(int columnIndex) {
-		return true;
-	}
-
-	@Override
-	public int getColumnCount() {
-		return columnNames.length;
-	}
-
-	@Override
-	public String getColumnName(int column) {
-		return columnNames[column];
-	}
-
-	@Override
-	public String getName() {
-		return "Coverage Data";
-	}
-
+	
 	@Override
 	public ArrayList<CoverageTableRow> getModelData() {
 		return rows;
-	}
-
-	@Override
-	public Object getColumnValueForRow(CoverageTableRow row, int columnIndex) {
-		switch(columnIndex) {
-		case 0:
-			return row.getCoverage();
-		case 1:
-			return row.getName();
-		case 2:
-			return String.format("0x%x", row.getAddress());
-		case 3:
-			return row.getBlocks();
-		case 4:
-			return row.getInstructions();
-		case 5:
-			return row.getFunctionSize();
-		default:
-			throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
-		}
 	}
 
 	@Override

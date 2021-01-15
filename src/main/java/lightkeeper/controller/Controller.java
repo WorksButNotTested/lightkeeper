@@ -164,6 +164,6 @@ public class Controller implements IEventListener, ICoverageModelListener {
 
 	@Override
 	public void modelChanged(TaskMonitor monitor) throws CancelledException {
-		colour(monitor);
+		colour(monitor);		
 	}
 }

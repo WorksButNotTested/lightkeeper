@@ -26,6 +26,7 @@ import lightkeeper.controller.Controller;
 import lightkeeper.controller.DisassemblyController;
 import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
+import lightkeeper.model.table.CoverageTable;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
@@ -42,6 +43,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	protected CoverageModel coverageModel;
 	protected CoverageTableModel tableModel;
 	protected CoverageInstructionModel instructionModel;
+	protected CoverageTable coverageTable;
 	protected Controller controller;
 	protected DisassemblyController disassemblyController;
 	protected LightKeeperProvider provider;
@@ -53,14 +55,20 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		coverageModel = new CoverageModel(this);
 		tableModel = new CoverageTableModel(this, coverageModel);
 		instructionModel = new CoverageInstructionModel(this, coverageModel);
+		coverageTable = new CoverageTable(tableModel);		
+		controller = new Controller(this, coverageModel, tableModel, instructionModel);
+		disassemblyController = new DisassemblyController(this, instructionModel);
+		
 		coverageModel.addModelListener(tableModel);
 		coverageModel.addModelListener(instructionModel);
-		controller = new Controller(this, coverageModel, tableModel, instructionModel);
+		instructionModel.addModelListener(controller);
+		instructionModel.addModelListener(disassemblyController);
+		tableModel.addModelListener(coverageTable);
+		
 		tableModel.addListener(controller);
 		instructionModel.addListener(controller);
-		instructionModel.addModelListener(controller);
-		disassemblyController = new DisassemblyController(this, instructionModel);
-		provider = new LightKeeperProvider(this, controller,  tableModel, "Light Keeper");
+				
+		provider = new LightKeeperProvider(this, controller,  tableModel, coverageTable, "Light Keeper");
 	}
 
 	@Override

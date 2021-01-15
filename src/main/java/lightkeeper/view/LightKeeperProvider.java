@@ -12,6 +12,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import docking.ActionContext;
@@ -22,7 +24,6 @@ import docking.action.ToolBarData;
 import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.table.GTable;
-import docking.widgets.table.TableSortStateEditor;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
@@ -30,47 +31,46 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.Controller;
-import lightkeeper.model.ICoverageModelListener;
+import lightkeeper.model.table.CoverageTable;
 import lightkeeper.model.table.CoverageTableModel;
 import resources.Icons;
 import resources.ResourceManager;
 
-public class LightKeeperProvider extends ComponentProvider implements ICoverageModelListener {
+public class LightKeeperProvider extends ComponentProvider implements TableModelListener {
 
 	private static File lastFile = null;
 
 	protected LightKeeperPlugin plugin;
 	protected CoverageTableModel model;
+	protected CoverageTable table; 
 	protected Controller controller;
-	protected GTable table;
+	protected GTable tableView;
 	protected JPanel panel;
 
-	public LightKeeperProvider(LightKeeperPlugin plugin, Controller controller, CoverageTableModel model, String owner) {
+	public LightKeeperProvider(LightKeeperPlugin plugin, Controller controller, CoverageTableModel model, CoverageTable table, String owner) {
 		super(plugin.getTool(), owner, owner);
 		this.plugin = plugin;
 		this.controller = controller;
 		this.model = model;
+		this.table = table;
 		buildPanel();
 		createActions();
 		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
 
 	private void buildPanel() {
-		panel = new JPanel(new BorderLayout());
-		var sortStateEditor = new TableSortStateEditor();
-		sortStateEditor.addSortedColumn(0);
-		model.setTableSortState(sortStateEditor.createTableSortState());
-		model.addModelListener(this);
-
-		table = new GTable();
-		table.setModel(model);
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-		table.setUserSortingEnabled(true);
-		table.addMouseListener(new MouseAdapter() {
+		panel = new JPanel(new BorderLayout());				
+		table.addTableModelListener(this);
+		
+		tableView = new GTable();
+		tableView.setModel(table);
+		tableView.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		tableView.setUserSortingEnabled(true);
+		tableView.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e){
 				if(e.getClickCount() == 2){
-					var row = table.getSelectedRow();
+					var row = tableView.getSelectedRow();
 					if (row == -1) {
 						return;
 					}
@@ -79,7 +79,7 @@ public class LightKeeperProvider extends ComponentProvider implements ICoverageM
 				}
 			}
 		});
-		table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+		tableView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
 				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
@@ -105,7 +105,7 @@ public class LightKeeperProvider extends ComponentProvider implements ICoverageM
 
 			}
 		});
-		panel.add(new JScrollPane(table));
+		panel.add(new JScrollPane(tableView));
 		setVisible(true);
 	}
 
@@ -208,8 +208,7 @@ public class LightKeeperProvider extends ComponentProvider implements ICoverageM
 	}
 
 	@Override
-	public void modelChanged(TaskMonitor monitor) throws CancelledException {
-		table.repaint();
-		controller.colour(monitor);
+	public void tableChanged(TableModelEvent arg0) {
+		tableView.repaint();		
 	}
 }
