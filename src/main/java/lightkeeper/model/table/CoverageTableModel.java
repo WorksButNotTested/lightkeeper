@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import docking.widgets.table.AbstractSortedTableModel;
 import docking.widgets.table.ColumnSortState.SortDirection;
@@ -137,8 +138,9 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 
 			var codeBlockInfo = processCodeBlocks(monitor, function, ranges);
 			var instructionInfo = processInstructions(monitor, function, ranges);
-			var functionSize = body.getMaxAddress().subtract(body.getMinAddress());
-
+			var addressRanges = StreamSupport.stream(body.getAddressRanges().spliterator(), false);
+			var sizes = addressRanges.map(r -> r.getMaxAddress().subtract(r.getMinAddress()));			
+			var functionSize = sizes.reduce(0L, (subTotal, s) -> subTotal + s);		
 			var row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(),
 					codeBlockInfo, instructionInfo, functionSize);
 			rows.add(row);
