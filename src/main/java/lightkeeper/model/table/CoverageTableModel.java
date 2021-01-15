@@ -139,7 +139,7 @@ public class CoverageTableModel extends AbstractSortedTableModel<CoverageTableRo
 			var codeBlockInfo = processCodeBlocks(monitor, function, ranges);
 			var instructionInfo = processInstructions(monitor, function, ranges);
 			var addressRanges = StreamSupport.stream(body.getAddressRanges().spliterator(), false);
-			var sizes = addressRanges.map(r -> r.getMaxAddress().subtract(r.getMinAddress()));			
+			var sizes = addressRanges.map(r -> r.getMaxAddress().subtract(r.getMinAddress()) + 1);			
 			var functionSize = sizes.reduce(0L, (subTotal, s) -> subTotal + s);		
 			var row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(),
 					codeBlockInfo, instructionInfo, functionSize);
