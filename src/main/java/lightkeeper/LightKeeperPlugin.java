@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,50 +22,67 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
-import lightkeeper.controller.LightKeeperController;
-import lightkeeper.controller.LightKeeperDisassemblyController;
-import lightkeeper.model.LightKeeperCoverageModel;
+import lightkeeper.controller.Controller;
+import lightkeeper.controller.DisassemblyController;
+import lightkeeper.model.coverage.CoverageModel;
+import lightkeeper.model.instruction.CoverageInstructionModel;
+import lightkeeper.model.table.CoverageTable;
+import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
 @PluginInfo(
-	status = PluginStatus.STABLE,
-	packageName = "light keeper",
-	category = PluginCategoryNames.MISC,
-	shortDescription = "Plugin for visualization of DynamoRio coverage data.",
-	description = "Plugin for visualization of DynamoRio coverage data."
-)
+		status = PluginStatus.STABLE,
+		packageName = "light keeper",
+		category = PluginCategoryNames.MISC,
+		shortDescription = "Plugin for visualization of DynamoRio coverage data.",
+		description = "Plugin for visualization of DynamoRio coverage data."
+		)
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
-
-	protected LightKeeperCoverageModel model;
-	protected LightKeeperController controller;
-	protected LightKeeperDisassemblyController disassemblyController;
+	protected CoverageModel coverageModel;
+	protected CoverageTableModel tableModel;
+	protected CoverageInstructionModel instructionModel;
+	protected CoverageTable coverageTable;
+	protected Controller controller;
+	protected DisassemblyController disassemblyController;
 	protected LightKeeperProvider provider;
 	protected Program program;
 	protected FlatProgramAPI api;
 
 	public LightKeeperPlugin(PluginTool tool) {
 		super(tool, true, true);
-		model = new LightKeeperCoverageModel(this);
-		controller = new LightKeeperController(this, this.model);
-		model.addListener(controller);
-		disassemblyController = new LightKeeperDisassemblyController(this, this.model);		
-		provider = new LightKeeperProvider(this, this.controller,  this.model, "Light Keeper");
+		coverageModel = new CoverageModel(this);
+		tableModel = new CoverageTableModel(this, coverageModel);
+		instructionModel = new CoverageInstructionModel(this, coverageModel);
+		coverageTable = new CoverageTable(tableModel);		
+		controller = new Controller(this, coverageModel, tableModel, instructionModel);
+		disassemblyController = new DisassemblyController(this, instructionModel);
+		
+		coverageModel.addModelListener(tableModel);
+		coverageModel.addModelListener(instructionModel);
+		instructionModel.addModelListener(controller);
+		instructionModel.addModelListener(disassemblyController);
+		tableModel.addModelListener(coverageTable);
+		
+		tableModel.addListener(controller);
+		instructionModel.addListener(controller);
+				
+		provider = new LightKeeperProvider(this, controller,  tableModel, coverageTable, "Light Keeper");
 	}
 
 	@Override
 	public void init() {
 		super.init();
 	}
-	
+
 	@Override
 	public void programActivated(Program activatedProgram) {
-		this.program = activatedProgram;
-		this.api = new FlatProgramAPI(activatedProgram);
+		program = activatedProgram;
+		api = new FlatProgramAPI(activatedProgram);
 	}
-	
+
 	public FlatProgramAPI getApi() {
-		return this.api;
+		return api;
 	}
 }

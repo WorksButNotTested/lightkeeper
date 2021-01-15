@@ -7,12 +7,12 @@ import java.io.InputStream;
 
 import ghidra.app.util.bin.ByteProvider;
 
-public class LightKeeperByteProvider implements ByteProvider {
+public class CountedByteProvider implements ByteProvider {
 	private InputStream inputStream;
 	private long length;
 	private long currentIndex;
 
-	public LightKeeperByteProvider(InputStream inputStream, long length) {
+	public CountedByteProvider(InputStream inputStream, long length) {
 		this.inputStream = inputStream;
 		this.length = length;
 	}
@@ -30,13 +30,13 @@ public class LightKeeperByteProvider implements ByteProvider {
 	public InputStream getUnderlyingInputStream() {
 		return inputStream;
 	}
-	
+
 	public long getPosition() {
-		return this.currentIndex;
+		return currentIndex;
 	}
-	
+
 	public long getLength() {
-		return this.length;
+		return length;
 	}
 
 	@Override
@@ -77,7 +77,7 @@ public class LightKeeperByteProvider implements ByteProvider {
 			}
 		}
 
-		int value = inputStream.read();
+		var value = inputStream.read();
 		if (value == -1) {
 			throw new EOFException();
 		}
@@ -97,8 +97,8 @@ public class LightKeeperByteProvider implements ByteProvider {
 			}
 		}
 
-		byte[] values = new byte[(int) len];
-		int nRead = inputStream.read(values);
+		var values = new byte[(int) len];
+		var nRead = inputStream.read(values);
 		if (nRead != len) {
 			throw new EOFException();
 		}

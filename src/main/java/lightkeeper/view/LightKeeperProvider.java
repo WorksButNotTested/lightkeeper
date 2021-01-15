@@ -24,72 +24,71 @@ import docking.action.ToolBarData;
 import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.table.GTable;
-import docking.widgets.table.TableSortStateEditor;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
-import lightkeeper.controller.LightKeeperController;
-import lightkeeper.model.LightKeeperCoverageModel;
-import lightkeeper.model.LightKeeperCoverageModelRow;
+import lightkeeper.controller.Controller;
+import lightkeeper.model.table.CoverageTable;
+import lightkeeper.model.table.CoverageTableModel;
 import resources.Icons;
 import resources.ResourceManager;
 
 public class LightKeeperProvider extends ComponentProvider implements TableModelListener {
 
 	private static File lastFile = null;
-	
+
 	protected LightKeeperPlugin plugin;
-	protected LightKeeperCoverageModel model;
-	protected LightKeeperController controller;
-	protected GTable table;
+	protected CoverageTableModel model;
+	protected CoverageTable table; 
+	protected Controller controller;
+	protected GTable tableView;
 	protected JPanel panel;
 
-	public LightKeeperProvider(LightKeeperPlugin plugin, LightKeeperController controller, LightKeeperCoverageModel model, String owner) {
+	public LightKeeperProvider(LightKeeperPlugin plugin, Controller controller, CoverageTableModel model, CoverageTable table, String owner) {
 		super(plugin.getTool(), owner, owner);
 		this.plugin = plugin;
 		this.controller = controller;
-		this.model = model;		
+		this.model = model;
+		this.table = table;
 		buildPanel();
 		createActions();
 		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
 
 	private void buildPanel() {
-		panel = new JPanel(new BorderLayout());		
-		TableSortStateEditor sortStateEditor = new TableSortStateEditor();
-		sortStateEditor.addSortedColumn(0);
-		model.setTableSortState(sortStateEditor.createTableSortState());
-		model.addTableModelListener(this);
+		panel = new JPanel(new BorderLayout());				
+		table.addTableModelListener(this);
 		
-		table = new GTable();
-		table.setModel(model);
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);		
-		table.setUserSortingEnabled(true);
-		table.addMouseListener(new MouseAdapter() {
+		tableView = new GTable();
+		tableView.setModel(table);
+		tableView.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		tableView.setUserSortingEnabled(true);
+		tableView.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e){
-		        if(e.getClickCount() == 2){
-		        	int row = table.getSelectedRow();
-		        	if (row == -1)
-		        		return;
-		        		        
-		        	controller.goTo(row);    				
-		        }
-		    }
+				if(e.getClickCount() == 2){
+					var row = tableView.getSelectedRow();
+					if (row == -1) {
+						return;
+					}
+
+					controller.goTo(row);
+				}
+			}
 		});
-		table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+		tableView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected, boolean hasFocus, int row, int colum) {
-				Component component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
-				LightKeeperCoverageModelRow modelRow = model.getModelData().get(row);
-				double coverage = modelRow.getCoverage().getDouble();
-				if (coverage == 0.0d) {					
+				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
+				var modelRow = model.getModelData().get(row);
+				var coverage = modelRow.getCoverage().getDouble();
+				if (coverage == 0.0d) {
 					component.setForeground(Color.BLACK);
-					Font font = component.getFont();
-					Font newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
+					var font = component.getFont();
+					var newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(newFont);
 				} else if (coverage < 0.20d){
 					component.setForeground(Color.BLUE);
@@ -103,10 +102,10 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					component.setForeground(Color.RED);
 				}
 				return component;
-				
+
 			}
 		});
-		panel.add(new JScrollPane(table));
+		panel.add(new JScrollPane(tableView));
 		setVisible(true);
 	}
 
@@ -127,14 +126,15 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		};
 		aboutAction.setMenuBarData(
 				new MenuData(new String[] {"About"},Icons.HELP_ICON,"Help"));
-		
+
 		dockingTool.addLocalAction(this, aboutAction);
-		
-		GhidraFileChooser chooser = new GhidraFileChooser(panel);		
+
+		var chooser = new GhidraFileChooser(panel);
 		chooser.setTitle("Import Coverage Data");
 		chooser.setApproveButtonText("Import");
 		chooser.setFileSelectionMode(GhidraFileChooserMode.FILES_ONLY);
-		
+		chooser.setMultiSelectionEnabled(true);
+
 		DockingAction importAction = new DockingAction("Import Coverage Data", getName()) {
 			@Override
 			public void actionPerformed(ActionContext context) {
@@ -143,51 +143,54 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				} else {
 					chooser.setSelectedFile(lastFile);
 				}
-				
-				File file = chooser.getSelectedFile();
-				if (file == null)
+
+				var files = chooser.getSelectedFiles();
+				if (files.size() == 0) {
 					return;
-				
-				if (!file.exists())
+				}
+
+				if (files.stream().filter(f -> !f.exists()).count() != 0) {
 					return;
-				
-				lastFile = file;
-													
+				}
+
+				lastFile = files.get(0);
+
 				Task task = new Task("Import Coverage Data", true, true, true){
 					@Override
 					public void run(TaskMonitor monitor) throws CancelledException {
-						controller.importCoverage(monitor, file);
+						controller.importCoverage(monitor, files);
 					}
 				};
-				TaskLauncher.launch(task);		
+				TaskLauncher.launch(task);
 			}
 		};
-		importAction.setToolBarData(new ToolBarData(Icons.ADD_ICON, null));		
+		importAction.setToolBarData(new ToolBarData(Icons.ADD_ICON, null));
 		importAction.setEnabled(true);
 		importAction.setMenuBarData(
 				new MenuData(new String[] {"Import"}, Icons.ADD_ICON, "Action"));
 		dockingTool.addLocalAction(this, importAction);
-		
+
 		DockingAction refreshAction = new DockingAction("Refresh", getName()) {
 			@Override
-			public void actionPerformed(ActionContext context) {		
-				if (lastFile == null)
+			public void actionPerformed(ActionContext context) {
+				if (lastFile == null) {
 					return;
+				}
 				Task task = new Task("Refresh Coverage Data", true, true, true){
 					@Override
 					public void run(TaskMonitor monitor) throws CancelledException {
 						controller.refreshCoverage(monitor);
 					}
 				};
-				TaskLauncher.launch(task);		
+				TaskLauncher.launch(task);
 			}
 		};
-		refreshAction.setToolBarData(new ToolBarData(Icons.REFRESH_ICON, null));		
+		refreshAction.setToolBarData(new ToolBarData(Icons.REFRESH_ICON, null));
 		refreshAction.setEnabled(true);
 		refreshAction.setMenuBarData(
 				new MenuData(new String[] {"Refresh"}, Icons.REFRESH_ICON, "Action"));
 		dockingTool.addLocalAction(this, refreshAction);
-		
+
 		DockingAction clearAction = new DockingAction("Clear", getName()) {
 			@Override
 			public void actionPerformed(ActionContext context) {
@@ -197,10 +200,10 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 						controller.clearCoverage(monitor);
 					}
 				};
-				TaskLauncher.launch(task);	
+				TaskLauncher.launch(task);
 			}
 		};
-		clearAction.setToolBarData(new ToolBarData(Icons.DELETE_ICON, null));		
+		clearAction.setToolBarData(new ToolBarData(Icons.DELETE_ICON, null));
 		clearAction.setEnabled(true);
 		clearAction.setMenuBarData(
 				new MenuData(new String[] {"Clear"}, Icons.DELETE_ICON, "Action"));
@@ -214,14 +217,6 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
-		this.table.repaint();		
-		Task task = new Task("Paint Coverage Data", true, true, true){
-			@Override
-			public void run(TaskMonitor monitor) throws CancelledException {				
-				controller.colour(monitor);				
-			}
-		};
-		TaskLauncher.launch(task);
-				
-	}	
+		tableView.repaint();		
+	}
 }
