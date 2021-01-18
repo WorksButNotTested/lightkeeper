@@ -4,15 +4,19 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -88,8 +92,9 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		tableView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected,
-					boolean hasFocus, int row, int colum) {
-				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row, colum);
+					boolean hasFocus, int row, int column) {
+				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row,
+						column);
 				var modelRow = model.getModelData().get(row);
 				var coverage = modelRow.getCoverage().getDouble();
 				if (coverage == 0.0d) {
@@ -130,8 +135,48 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				}
 			}
 		});
+		listView.addKeyListener(new KeyListener() {
+			@Override
+			public void keyPressed(KeyEvent arg0) {
+				if (arg0.getKeyCode() != KeyEvent.VK_SPACE)
+					return;
+
+				// TODO
+
+			}
+
+			@Override
+			public void keyReleased(KeyEvent arg0) {
+			}
+
+			@Override
+			public void keyTyped(KeyEvent arg0) {
+			}
+		});
+		listView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row,
+						column);
+				if (column != 0)
+					return component;
+
+				switch (list.getModelData().get(row).getState()) {
+				case ADDED:
+					return new JLabel(Icons.ADD_ICON);
+				case SUBTRACTED:
+					return new JLabel(Icons.DELETE_ICON);
+				case IGNORED:
+					return new JLabel();
+				default:
+					return new JLabel(Icons.HELP_ICON);
+				}
+			}
+		});
 
 		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.setTabPlacement(SwingConstants.RIGHT);
 		tabbedPane.addTab("View", null, new JScrollPane(tableView), "Coverage Data Viewing");
 		tabbedPane.addTab("Select", null, new JScrollPane(listView), "Coverage file selection");
 		panel.add(tabbedPane);

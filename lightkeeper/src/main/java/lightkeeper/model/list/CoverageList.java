@@ -10,7 +10,6 @@ import ghidra.util.task.TaskMonitor;
 import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.coverage.CoverageListRow;
 import lightkeeper.model.coverage.CoverageModel;
-import resources.Icons;
 
 public class CoverageList extends AbstractSortedTableModel<CoverageListRow> implements ICoverageModelListener {
 	protected CoverageModel model;
@@ -20,8 +19,7 @@ public class CoverageList extends AbstractSortedTableModel<CoverageListRow> impl
 	public CoverageList(CoverageModel model) {
 		this.model = model;
 		var tableSortStateEditor = new TableSortStateEditor();
-		tableSortStateEditor.addSortedColumn(0, SortDirection.DESCENDING);
-		tableSortStateEditor.addSortedColumn(2);
+		tableSortStateEditor.addSortedColumn(1, SortDirection.ASCENDING);
 		setTableSortState(tableSortStateEditor.createTableSortState());
 	}
 
@@ -42,7 +40,7 @@ public class CoverageList extends AbstractSortedTableModel<CoverageListRow> impl
 
 	@Override
 	public String getName() {
-		return "Coverage Data";
+		return "Coverage Files";
 	}
 
 	@Override
@@ -54,16 +52,7 @@ public class CoverageList extends AbstractSortedTableModel<CoverageListRow> impl
 	public Object getColumnValueForRow(CoverageListRow row, int columnIndex) {
 		switch (columnIndex) {
 		case 0:
-			switch (row.getState()) {
-			case ADDED:
-				return Icons.ADD_ICON;
-			case SUBTRACTED:
-				return Icons.DELETE_ICON;
-			case IGNORED:
-				return null;
-			default:
-				return Icons.HELP_ICON;
-			}
+			return row.getState();
 		case 1:
 			return row.getName();
 		default:
