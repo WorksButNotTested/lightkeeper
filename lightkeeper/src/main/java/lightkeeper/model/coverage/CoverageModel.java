@@ -1,6 +1,7 @@
 package lightkeeper.model.coverage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +43,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 	}
 
 	@Override
-	public void update(TaskMonitor monitor) throws CancelledException
+	public void update(TaskMonitor monitor) throws CancelledException, IOException
 	{
 		try
 		{
@@ -56,9 +57,20 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 				var api = plugin.getApi();
 				var programFile = api.getProgramFile();
 				var programFileName = programFile.getName();
+				var md5 = api.getCurrentProgram().getExecutableMD5();
 				var selectedModules = file.getModules().stream()
-						.filter(m -> new File(m.getPath()).getName().equals(programFileName));
-				Set<Integer> ids = selectedModules.map(ModuleEntry::getId).collect(Collectors.toSet());
+						.filter(m -> new File(m.getPath()).getName().equals(programFileName))
+						.collect(Collectors.toList());
+				
+				var misMatch = selectedModules.stream().filter(m -> m.getChecksum() != null)
+					.filter(m -> !m.getChecksum().equalsIgnoreCase(md5))
+					.findFirst();
+				if (misMatch.isPresent()) {
+					var module = misMatch.get();
+					throw new IOException(String.format("Module entry '%s' has invalid checksum '%s'", module.getPath(), module.getChecksum()));
+				}
+								
+				Set<Integer> ids = selectedModules.stream().map(ModuleEntry::getId).collect(Collectors.toSet());
 
 				var baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
 				for (BlockEntry block: file.getBlocks()) {

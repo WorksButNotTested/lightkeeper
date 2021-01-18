@@ -6,11 +6,11 @@ public class ModuleEntry {
 	protected long start;
 	protected long end;
 	protected long entry;
-	protected long checksum;
+	protected String checksum;
 	protected long timeStamp;
 	protected String path;
 
-	public ModuleEntry(int id, int containingId, long start, long end, long entry, long checksum, long timeStamp, String path){
+	public ModuleEntry(int id, int containingId, long start, long end, long entry, String checksum, long timeStamp, String path){
 		this.id = id;
 		this.containingId = containingId;
 		this.start = start;
@@ -23,7 +23,7 @@ public class ModuleEntry {
 
 	@Override
 	public String toString() {
-		var str = String.format("id: %d, start: %x, end: %x, entry: %x, checksum: %x, timestamp: %x, path: %s", id, start, end, entry, checksum, timeStamp, path);
+		var str = String.format("id: %d, start: %x, end: %x, entry: %x, checksum: %s, timestamp: %x, path: %s", id, start, end, entry, checksum, timeStamp, path);
 		return str;
 	}
 
@@ -41,6 +41,10 @@ public class ModuleEntry {
 
 	public long getEnd() {
 		return end;
+	}
+	
+	public String getChecksum() {
+		return this.checksum;
 	}
 
 	public String getPath() {

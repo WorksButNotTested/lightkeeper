@@ -119,26 +119,27 @@ public class Controller implements IEventListener, ICoverageModelListener {
 
 	public void importCoverage(TaskMonitor monitor, List<File> files) throws CancelledException {
 		monitor.checkCanceled();
-
 		try {
+			model.clear(monitor);
+			
 			for(File file: files) {
 				monitor.setMessage(String.format("Importing: %s",file.getAbsolutePath()));
 				addMessage(String.format("Importing: %s",file.getAbsolutePath()));
 				monitor.setProgress(0);
-
+	
 				var dataFile = new DynamoRioFile(file);
 				dataFile.addListener(this);
 				dataFile.read(monitor);
-
+	
 				addMessage(String.format("Imported: %s",file.getAbsolutePath()));
 				model.load(dataFile);
 			}
-
+	
 			model.update(monitor);
 			addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
-			addException(e);
+			this.addException(e);			
 		}
 	}
 
@@ -153,13 +154,17 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	}
 
 	public void refreshCoverage(TaskMonitor monitor) throws CancelledException {
-		monitor.checkCanceled();
-		monitor.setMessage("Refreshing");
-		addMessage("Refreshing");
-		monitor.setProgress(0);
-		model.update(monitor);
-		addMessage("Completed");
-		monitor.setProgress(100);
+		try {
+			monitor.checkCanceled();
+			monitor.setMessage("Refreshing");
+			addMessage("Refreshing");
+			monitor.setProgress(0);
+			model.update(monitor);
+			addMessage("Completed");
+			monitor.setProgress(100);
+		} catch (IOException e) {
+			this.addException(e);			
+		}
 	}
 
 	@Override

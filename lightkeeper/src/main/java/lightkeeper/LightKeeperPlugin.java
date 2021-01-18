@@ -65,6 +65,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		instructionModel.addModelListener(disassemblyController);
 		tableModel.addModelListener(coverageTable);
 		
+		coverageModel.addListener(controller);
 		tableModel.addListener(controller);
 		instructionModel.addListener(controller);
 				

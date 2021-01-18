@@ -124,11 +124,10 @@ public class ModuleReader {
 		var entryString = moduleMatcher.group("entry");
 		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16), String.format("Invalid entry: %s", entryString));
 
-		var checksum = 0L;
+		String checksum = null;
 		var timeStamp = 0L;
 		if (selectedModuleTriplet.hasChecksumTimeStamp) {
-			var checksumString = moduleMatcher.group("checksum");
-			checksum = parseNumber(checksumString, s -> Long.parseLong(s, 16), String.format("Invalid checksum: %s", checksumString));
+			checksum = moduleMatcher.group("checksum");			
 
 			var timeStampString = moduleMatcher.group("timestamp");
 			timeStamp = parseNumber(timeStampString, s -> Long.parseLong(s, 16), String.format("Invalid time stamp: %s", timeStampString));
