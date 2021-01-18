@@ -40,7 +40,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 
 	@Override
 	public void load(DynamoRioFile file) {
-		CoverageListRow row = new CoverageListRow(CoverageListState.ADDED, file);
+		var row = new CoverageListRow(CoverageListState.ADDED, file);
 		rows.add(row);
 	}
 
@@ -49,19 +49,19 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 		try {
 			ranges = new HashSet<>();
 			for (CoverageListRow row : rows) {
-				CoverageListState state = row.getState();
-				if (state == CoverageListState.IGNORED)
+				var state = row.getState();
+				if (state == CoverageListState.IGNORED) {
 					continue;
+				}
 
-				DynamoRioFile file = row.getFile();
+				var file = row.getFile();
 				if (map.containsKey(file)) {
 					continue;
 				}
 
 				var fileRanges = new HashSet<AddressRange>();
 				var api = plugin.getApi();
-				var programFile = api.getProgramFile();
-				var programFileName = programFile.getName();
+				var programFileName = api.getCurrentProgram().getName();
 				var md5 = api.getCurrentProgram().getExecutableMD5();
 				var selectedModules = file.getModules().stream()
 						.filter(m -> new File(m.getPath()).getName().equals(programFileName))
@@ -106,7 +106,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 	}
 
 	public List<CoverageListRow> getFileData() {
-		return this.rows;
+		return rows;
 	}
 
 	@Override
