@@ -237,11 +237,11 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	}
 
 	private String getVersionFromManifest() {
+		String res = null;
 		try {
-			return getClass().getPackage().getImplementationVersion();
-		} catch (Exception e) {
-			return "version unknown";
-		}
+			res = getClass().getPackage().getImplementationVersion();
+		} catch (Exception e) {	}
+		return (res != null ? res : "version unknown");
 	}
 
 	private void createActions() {
