@@ -22,4 +22,19 @@ public class CoverageListRow {
 	public DynamoRioFile getFile() {
 		return file;
 	}
+
+	public void toggle() {
+		switch (this.state) {
+		case ADDED:
+			this.state = CoverageListState.SUBTRACTED;
+			break;
+		case SUBTRACTED:
+			this.state = CoverageListState.IGNORED;
+			break;
+		case IGNORED:
+		default:
+			this.state = CoverageListState.ADDED;
+			break;
+		}
+	}
 }

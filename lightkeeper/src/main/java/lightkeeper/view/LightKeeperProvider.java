@@ -9,6 +9,9 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -134,12 +137,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					var row = tableView.getSelectedRow();
+					var row = listView.getSelectedRow();
 					if (row == -1) {
 						return;
 					}
 
-					// TODO
+					toggleRows(Arrays.asList(row));
 				}
 			}
 		});
@@ -149,7 +152,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				if (arg0.getKeyCode() != KeyEvent.VK_SPACE)
 					return;
 
-				// TODO
+				int[] rows = listView.getSelectedRows();
+				List<Integer> rowsList = new ArrayList<Integer>(rows.length);
+				for (int i : rows) {
+					rowsList.add(i);
+				}
+				toggleRows(rowsList);
 			}
 
 			@Override
@@ -192,6 +200,16 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		tabbedPane.addTab("Select", null, new JScrollPane(listView), "Coverage file selection");
 		panel.add(tabbedPane);
 		setVisible(true);
+	}
+
+	protected void toggleRows(List<Integer> rows) {
+		Task task = new Task("Select Coverage Files", true, true, true) {
+			@Override
+			public void run(TaskMonitor monitor) throws CancelledException {
+				controller.toggleCoverageFiles(monitor, rows);
+			}
+		};
+		TaskLauncher.launch(task);
 	}
 
 	private String getVersionFromManifest() {

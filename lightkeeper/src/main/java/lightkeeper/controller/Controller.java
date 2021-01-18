@@ -169,4 +169,15 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	public void modelChanged(TaskMonitor monitor) throws CancelledException {
 		colour(monitor);
 	}
+
+	public void toggleCoverageFiles(TaskMonitor monitor, List<Integer> rows) throws CancelledException {
+		try {
+			for (int row : rows) {
+				model.getFileData().get(row).toggle();
+			}
+			model.update(monitor);
+		} catch (IOException e) {
+			this.addException(e);
+		}
+	}
 }
