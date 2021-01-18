@@ -20,6 +20,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import docking.ActionContext;
 import docking.ComponentProvider;
@@ -118,9 +119,16 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			}
 		});
 
-		listView = new GTable();
+		listView = new GTable() {
+			@Override
+			public void doLayout() {
+				var iconWidth = new JLabel(Icons.ADD_ICON).getPreferredSize().width;
+				TableColumn statusColumn = listView.getColumnModel().getColumn(0);
+				statusColumn.setWidth(iconWidth);
+				super.doLayout();
+			}
+		};
 		listView.setModel(list);
-		listView.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		listView.setUserSortingEnabled(true);
 		listView.addMouseListener(new MouseAdapter() {
 			@Override
@@ -142,7 +150,6 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					return;
 
 				// TODO
-
 			}
 
 			@Override
@@ -174,6 +181,10 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				}
 			}
 		});
+
+		listView.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+		TableColumn statusColumn = listView.getColumnModel().getColumn(0);
+		listView.getTableHeader().setResizingColumn(statusColumn);
 
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setTabPlacement(SwingConstants.RIGHT);

@@ -14,7 +14,7 @@ import lightkeeper.model.coverage.CoverageModel;
 public class CoverageList extends AbstractSortedTableModel<CoverageListRow> implements ICoverageModelListener {
 	protected CoverageModel model;
 
-	private String[] columnNames = { "Status", "File" };
+	private String[] columnNames = { "", "File" };
 
 	public CoverageList(CoverageModel model) {
 		this.model = model;
