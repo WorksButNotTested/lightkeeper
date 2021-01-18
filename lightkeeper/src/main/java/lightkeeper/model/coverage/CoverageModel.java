@@ -20,10 +20,9 @@ import lightkeeper.io.module.ModuleEntry;
 import lightkeeper.model.AbstractCoverageModel;
 
 public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<AddressRange>> {
-	protected ArrayList<DynamoRioFile> files = new ArrayList<>();
+	protected ArrayList<CoverageListRow> rows = new ArrayList<>();
 	protected HashMap<DynamoRioFile, HashSet<AddressRange>> map = new HashMap<>();
 	protected HashSet<AddressRange> ranges = new HashSet<>();
-
 
 	public CoverageModel(LightKeeperPlugin plugin) {
 		super(plugin);
@@ -31,7 +30,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 
 	@Override
 	public void clear(TaskMonitor monitor) throws CancelledException {
-		files = new ArrayList<>();
+		rows = new ArrayList<>();
 		map = new HashMap<>();
 		ranges = new HashSet<>();
 		notifyUpdate(monitor);
@@ -39,16 +38,16 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 
 	@Override
 	public void load(DynamoRioFile file) {
-		files.add(file);
+		CoverageListRow row = new CoverageListRow(CoverageListState.ADDED, file);
+		rows.add(row);
 	}
 
 	@Override
-	public void update(TaskMonitor monitor) throws CancelledException, IOException
-	{
-		try
-		{
+	public void update(TaskMonitor monitor) throws CancelledException, IOException {
+		try {
 			ranges = new HashSet<>();
-			for (DynamoRioFile file: files) {
+			for (CoverageListRow row : rows) {
+				DynamoRioFile file = row.getFile();
 				if (map.containsKey(file)) {
 					continue;
 				}
@@ -61,19 +60,19 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 				var selectedModules = file.getModules().stream()
 						.filter(m -> new File(m.getPath()).getName().equals(programFileName))
 						.collect(Collectors.toList());
-				
+
 				var misMatch = selectedModules.stream().filter(m -> m.getChecksum() != null)
-					.filter(m -> !m.getChecksum().equalsIgnoreCase(md5))
-					.findFirst();
+						.filter(m -> !m.getChecksum().equalsIgnoreCase(md5)).findFirst();
 				if (misMatch.isPresent()) {
 					var module = misMatch.get();
-					throw new IOException(String.format("Module entry '%s' has invalid checksum '%s'", module.getPath(), module.getChecksum()));
+					throw new IOException(String.format("Module entry '%s' has invalid checksum '%s'", module.getPath(),
+							module.getChecksum()));
 				}
-								
+
 				Set<Integer> ids = selectedModules.stream().map(ModuleEntry::getId).collect(Collectors.toSet());
 
 				var baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
-				for (BlockEntry block: file.getBlocks()) {
+				for (BlockEntry block : file.getBlocks()) {
 					monitor.checkCanceled();
 					if (!ids.contains(block.getModule())) {
 						continue;
@@ -89,10 +88,13 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 			ranges.addAll(rangeStream.collect(Collectors.toList()));
 
 			notifyUpdate(monitor);
-		}
-		catch (AddressOverflowException e) {
+		} catch (AddressOverflowException e) {
 			addException(e);
 		}
+	}
+
+	public ArrayList<CoverageListRow> getFileData() {
+		return this.rows;
 	}
 
 	@Override

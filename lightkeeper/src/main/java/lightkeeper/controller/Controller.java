@@ -26,7 +26,8 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	protected CoverageTableModel tableModel;
 	protected CoverageInstructionModel instructionModel;
 
-	public Controller(LightKeeperPlugin plugin, CoverageModel model, CoverageTableModel tableModel, CoverageInstructionModel instructionModel) {
+	public Controller(LightKeeperPlugin plugin, CoverageModel model, CoverageTableModel tableModel,
+			CoverageInstructionModel instructionModel) {
 		this.plugin = plugin;
 		this.model = model;
 		this.tableModel = tableModel;
@@ -68,8 +69,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		var transaction = program.startTransaction("Light Keeper");
 		try {
 			colorService.clearAllBackgroundColors();
-			for (AddressRange range: instructionModel.getModelData())
-			{
+			for (AddressRange range : instructionModel.getModelData()) {
 				monitor.checkCanceled();
 				var min = range.getMinAddress();
 				var max = range.getMaxAddress();
@@ -120,26 +120,24 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	public void importCoverage(TaskMonitor monitor, List<File> files) throws CancelledException {
 		monitor.checkCanceled();
 		try {
-			model.clear(monitor);
-			
-			for(File file: files) {
-				monitor.setMessage(String.format("Importing: %s",file.getAbsolutePath()));
-				addMessage(String.format("Importing: %s",file.getAbsolutePath()));
+			for (File file : files) {
+				monitor.setMessage(String.format("Importing: %s", file.getAbsolutePath()));
+				addMessage(String.format("Importing: %s", file.getAbsolutePath()));
 				monitor.setProgress(0);
-	
+
 				var dataFile = new DynamoRioFile(file);
 				dataFile.addListener(this);
 				dataFile.read(monitor);
-	
-				addMessage(String.format("Imported: %s",file.getAbsolutePath()));
+
+				addMessage(String.format("Imported: %s", file.getAbsolutePath()));
 				model.load(dataFile);
 			}
-	
+
 			model.update(monitor);
 			addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
-			this.addException(e);			
+			this.addException(e);
 		}
 	}
 
@@ -163,12 +161,12 @@ public class Controller implements IEventListener, ICoverageModelListener {
 			addMessage("Completed");
 			monitor.setProgress(100);
 		} catch (IOException e) {
-			this.addException(e);			
+			this.addException(e);
 		}
 	}
 
 	@Override
 	public void modelChanged(TaskMonitor monitor) throws CancelledException {
-		colour(monitor);		
+		colour(monitor);
 	}
 }

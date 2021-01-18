@@ -22,11 +22,13 @@ import lightkeeper.io.module.ModuleReader;
 public class DynamoRioFile implements IEventListener {
 	protected final String HEADER = "DRCOV VERSION: 2";
 	protected final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
-	protected final Pattern TABLE_REGEX = Pattern.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
+	protected final Pattern TABLE_REGEX = Pattern
+			.compile("^Module Table: (version (?<version>\\d+), count )?(?<count>\\d+)$");
 	protected final Pattern BB_TABLE_REGEX = Pattern.compile("^BB Table: (?<blocks>\\d+) bbs$");
 
 	protected CountedByteProvider provider;
 	protected BinaryLineReader reader;
+	protected File file;
 
 	protected String flavour;
 	protected int tableVersion;
@@ -36,10 +38,11 @@ public class DynamoRioFile implements IEventListener {
 	protected ArrayList<BlockEntry> blocks = new ArrayList<>();
 	private List<IEventListener> listeners = new ArrayList<>();
 
-	public DynamoRioFile (File file) throws IOException {
+	public DynamoRioFile(File file) throws IOException {
 		var stream = new FileInputStream(file);
 		provider = new CountedByteProvider(stream, file.length());
 		reader = new BinaryLineReader(provider);
+		this.file = file;
 	}
 
 	public void read(TaskMonitor monitor) throws IOException, CancelledException {
@@ -123,8 +126,7 @@ public class DynamoRioFile implements IEventListener {
 	private void readModules(TaskMonitor monitor) throws CancelledException, IOException {
 		var moduleReader = new ModuleReader(monitor, reader, tableVersion);
 		moduleReader.addListener(this);
-		for (var i = 0; i < tableCount; i++)
-		{
+		for (var i = 0; i < tableCount; i++) {
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Reading module: %d", i));
 			var module = moduleReader.read();
@@ -160,7 +162,8 @@ public class DynamoRioFile implements IEventListener {
 			var block = blockReader.read();
 			long moduleLimit = moduleLimits.get(block.getModule());
 			if (block.getEnd() > moduleLimit) {
-				throw new IOException(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
+				throw new IOException(
+						String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
 			}
 			blocks.add(block);
 		}
@@ -168,7 +171,8 @@ public class DynamoRioFile implements IEventListener {
 		monitor.checkCanceled();
 
 		if (provider.getLength() != provider.getPosition()) {
-			throw new IOException(String.format("File has: %d unexpected trailing bytes at position: %d", provider.getLength() - provider.getPosition(), provider.getPosition()));
+			throw new IOException(String.format("File has: %d unexpected trailing bytes at position: %d",
+					provider.getLength() - provider.getPosition(), provider.getPosition()));
 		}
 
 		monitor.setMessage("File parsing complete");
@@ -185,14 +189,17 @@ public class DynamoRioFile implements IEventListener {
 
 	protected HashMap<Integer, Long> getModuleLimits() {
 		var moduleLimits = new HashMap<Integer, Long>();
-		for (ModuleEntry module: modules) {
+		for (ModuleEntry module : modules) {
 			var containing_id = module.getContainingId();
-			var selectedModules = modules.stream()
-					.filter(m -> m.getContainingId() == containing_id);
+			var selectedModules = modules.stream().filter(m -> m.getContainingId() == containing_id);
 			Stream<Long> limits = selectedModules.map(ModuleEntry::getEnd);
 			var maxLimit = limits.max(Long::compare).get();
 			moduleLimits.put(module.getId(), maxLimit);
 		}
 		return moduleLimits;
+	}
+
+	public String getName() {
+		return file.getName();
 	}
 }

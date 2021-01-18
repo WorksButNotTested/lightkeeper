@@ -26,24 +26,20 @@ import lightkeeper.controller.Controller;
 import lightkeeper.controller.DisassemblyController;
 import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
+import lightkeeper.model.list.CoverageList;
 import lightkeeper.model.table.CoverageTable;
 import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
-@PluginInfo(
-		status = PluginStatus.STABLE,
-		packageName = "light keeper",
-		category = PluginCategoryNames.MISC,
-		shortDescription = "Plugin for visualization of DynamoRio coverage data.",
-		description = "Plugin for visualization of DynamoRio coverage data."
-		)
+@PluginInfo(status = PluginStatus.STABLE, packageName = "light keeper", category = PluginCategoryNames.MISC, shortDescription = "Plugin for visualization of DynamoRio coverage data.", description = "Plugin for visualization of DynamoRio coverage data.")
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 	protected CoverageModel coverageModel;
 	protected CoverageTableModel tableModel;
 	protected CoverageInstructionModel instructionModel;
 	protected CoverageTable coverageTable;
+	protected CoverageList coverageList;
 	protected Controller controller;
 	protected DisassemblyController disassemblyController;
 	protected LightKeeperProvider provider;
@@ -55,21 +51,23 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		coverageModel = new CoverageModel(this);
 		tableModel = new CoverageTableModel(this, coverageModel);
 		instructionModel = new CoverageInstructionModel(this, coverageModel);
-		coverageTable = new CoverageTable(tableModel);		
+		coverageTable = new CoverageTable(tableModel);
+		coverageList = new CoverageList(coverageModel);
 		controller = new Controller(this, coverageModel, tableModel, instructionModel);
 		disassemblyController = new DisassemblyController(this, instructionModel);
-		
+
 		coverageModel.addModelListener(tableModel);
 		coverageModel.addModelListener(instructionModel);
 		instructionModel.addModelListener(controller);
 		instructionModel.addModelListener(disassemblyController);
 		tableModel.addModelListener(coverageTable);
-		
+		coverageModel.addModelListener(coverageList);
+
 		coverageModel.addListener(controller);
 		tableModel.addListener(controller);
 		instructionModel.addListener(controller);
-				
-		provider = new LightKeeperProvider(this, controller,  tableModel, coverageTable, "Light Keeper");
+
+		provider = new LightKeeperProvider(this, controller, tableModel, coverageTable, coverageList, "Light Keeper");
 	}
 
 	@Override

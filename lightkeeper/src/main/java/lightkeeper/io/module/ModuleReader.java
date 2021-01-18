@@ -12,9 +12,10 @@ import lightkeeper.controller.IEventListener;
 import lightkeeper.io.BinaryLineReader;
 
 public class ModuleReader {
-	//	Columns: id, containing_id, start, end, entry, offset, path
+	// Columns: id, containing_id, start, end, entry, offset, path
 	protected final String COLUMN_2_HDR_WIN = "Columns: id, base, end, entry, checksum, timestamp, path";
-	protected final Pattern COLUMN_2_HDR_WIN_FMT = Pattern.compile("^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<checksum>[0-9a-fA-F]+), (0x)?(?<timestamp>[0-9a-fA-F]+), (?<path>.+)$");
+	protected final Pattern COLUMN_2_HDR_WIN_FMT = Pattern.compile(
+			"^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<checksum>[0-9a-fA-F]+), (0x)?(?<timestamp>[0-9a-fA-F]+), (?<path>.+)$");
 
 	protected final String COLUMN_2_HDR_LINUX = "Columns: id, base, end, entry, path";
 	protected final Pattern COLUMN_2_HDR_LINUX_FMT = null;
@@ -29,7 +30,10 @@ public class ModuleReader {
 	protected final Pattern COLUMN_4_HDR_WIN_FMT = null;
 
 	protected final String COLUMN_4_HDR_LINUX = "Columns: id, containing_id, start, end, entry, offset, path";
-	protected final Pattern COLUMN_4_HDR_LINUX_FMT = Pattern.compile("^\\s*(?<id>\\d+), \\s*(?<containingid>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<offset>[0-9a-fA-F]+), (?<path>.+)$");
+	protected final Pattern COLUMN_4_HDR_LINUX_FMT = Pattern.compile(
+			"^\\s*(?<id>\\d+), \\s*(?<containingid>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<offset>[0-9a-fA-F]+), (?<path>.+)$");
+
+	protected final Pattern NULL_CHECKSUM = Pattern.compile("0+");
 
 	private List<IEventListener> listeners = new ArrayList<>();
 	protected TaskMonitor monitor;
@@ -38,15 +42,15 @@ public class ModuleReader {
 	protected final ArrayList<ModuleTriplet> formats = new ArrayList<>();
 	protected ModuleTriplet selectedModuleTriplet;
 
-	private static class ModuleTriplet
-	{
+	private static class ModuleTriplet {
 		protected int version;
 		protected String header;
 		protected Pattern regex;
 		protected boolean hasContainingId;
 		protected boolean hasChecksumTimeStamp;
 
-		public ModuleTriplet (int version, String header, Pattern regex, boolean hasContainingId, boolean hasChecksumTimeStamp) {
+		public ModuleTriplet(int version, String header, Pattern regex, boolean hasContainingId,
+				boolean hasChecksumTimeStamp) {
 			this.version = version;
 			this.header = header;
 			this.regex = regex;
@@ -55,16 +59,17 @@ public class ModuleReader {
 		}
 	}
 
-	public ModuleReader(TaskMonitor monitor, BinaryLineReader reader, int tableVersion) throws CancelledException, IOException {
+	public ModuleReader(TaskMonitor monitor, BinaryLineReader reader, int tableVersion)
+			throws CancelledException, IOException {
 		this.monitor = monitor;
 		this.reader = reader;
 
-		formats.add(new ModuleTriplet (2, COLUMN_2_HDR_WIN, COLUMN_2_HDR_WIN_FMT, false, true));
-		formats.add(new ModuleTriplet (2, COLUMN_2_HDR_LINUX, COLUMN_2_HDR_LINUX_FMT, false, false));
-		formats.add(new ModuleTriplet (3, COLUMN_3_HDR_WIN, COLUMN_3_HDR_WIN_FMT, true, true));
-		formats.add(new ModuleTriplet (3, COLUMN_3_HDR_LINUX, COLUMN_3_HDR_LINUX_FMT, true, false));
-		formats.add(new ModuleTriplet (4, COLUMN_4_HDR_WIN, COLUMN_4_HDR_WIN_FMT, true, true));
-		formats.add(new ModuleTriplet (4, COLUMN_4_HDR_LINUX, COLUMN_4_HDR_LINUX_FMT, true, false));
+		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_WIN, COLUMN_2_HDR_WIN_FMT, false, true));
+		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_LINUX, COLUMN_2_HDR_LINUX_FMT, false, false));
+		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_WIN, COLUMN_3_HDR_WIN_FMT, true, true));
+		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_LINUX, COLUMN_3_HDR_LINUX_FMT, true, false));
+		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_WIN, COLUMN_4_HDR_WIN_FMT, true, true));
+		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_LINUX, COLUMN_4_HDR_LINUX_FMT, true, false));
 
 		readColumnHeader();
 
@@ -72,12 +77,13 @@ public class ModuleReader {
 		formats.removeIf(t -> !t.header.equals(columnHeader));
 
 		if (formats.size() != 1) {
-			throw new IOException(String.format("Failed to find valid header: '%s' for version: %d", columnHeader, tableVersion));
+			throw new IOException(
+					String.format("Failed to find valid header: '%s' for version: %d", columnHeader, tableVersion));
 		}
 
 		selectedModuleTriplet = formats.get(0);
 		if (selectedModuleTriplet.regex == null) {
-			throw new IOException (String.format("Unsupported pattern: '%s'", formats.get(0).header));
+			throw new IOException(String.format("Unsupported pattern: '%s'", formats.get(0).header));
 		}
 	}
 
@@ -112,25 +118,31 @@ public class ModuleReader {
 		var containingId = id;
 		if (selectedModuleTriplet.hasContainingId) {
 			var containingIdString = moduleMatcher.group("containingid");
-			containingId = parseNumber(containingIdString, Integer::parseInt, String.format("Invalid containing_id: %s", containingIdString));
+			containingId = parseNumber(containingIdString, Integer::parseInt,
+					String.format("Invalid containing_id: %s", containingIdString));
 		}
 
 		var startString = moduleMatcher.group("start");
-		long start = parseNumber(startString, s -> Long.parseLong(s, 16), String.format("Invalid start: %s", startString));
+		long start = parseNumber(startString, s -> Long.parseLong(s, 16),
+				String.format("Invalid start: %s", startString));
 
 		var endString = moduleMatcher.group("end");
 		long end = parseNumber(endString, s -> Long.parseLong(s, 16), String.format("Invalid start: %s", endString));
 
 		var entryString = moduleMatcher.group("entry");
-		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16), String.format("Invalid entry: %s", entryString));
+		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16),
+				String.format("Invalid entry: %s", entryString));
 
 		String checksum = null;
 		var timeStamp = 0L;
 		if (selectedModuleTriplet.hasChecksumTimeStamp) {
-			checksum = moduleMatcher.group("checksum");			
+			String checkSumField = moduleMatcher.group("checksum");
+			if (!NULL_CHECKSUM.matcher(checkSumField).matches())
+				checksum = moduleMatcher.group("checksum");
 
 			var timeStampString = moduleMatcher.group("timestamp");
-			timeStamp = parseNumber(timeStampString, s -> Long.parseLong(s, 16), String.format("Invalid time stamp: %s", timeStampString));
+			timeStamp = parseNumber(timeStampString, s -> Long.parseLong(s, 16),
+					String.format("Invalid time stamp: %s", timeStampString));
 		}
 
 		var pathString = moduleMatcher.group("path");
