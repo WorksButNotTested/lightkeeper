@@ -1,6 +1,6 @@
 package lightkeeper.model.list;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import docking.widgets.table.AbstractSortedTableModel;
 import docking.widgets.table.ColumnSortState.SortDirection;
@@ -44,7 +44,7 @@ public class CoverageList extends AbstractSortedTableModel<CoverageListRow> impl
 	}
 
 	@Override
-	public ArrayList<CoverageListRow> getModelData() {
+	public List<CoverageListRow> getModelData() {
 		return this.model.getFileData();
 	}
 

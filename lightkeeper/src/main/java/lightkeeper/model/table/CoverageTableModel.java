@@ -3,6 +3,7 @@ package lightkeeper.model.table;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
@@ -16,24 +17,24 @@ import lightkeeper.model.AbstractCoverageModel;
 import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRange>, ArrayList<CoverageTableRow>> implements ICoverageModelListener {	
+public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>, List<CoverageTableRow>>
+		implements ICoverageModelListener {
 	protected CoverageModel coverage;
-	protected ArrayList<AddressRange> modelRanges;
-	protected ArrayList<CoverageTableRow> rows = new ArrayList<>();
+	protected List<AddressRange> modelRanges;
+	protected List<CoverageTableRow> rows = new ArrayList<>();
 
 	public CoverageTableModel(LightKeeperPlugin plugin, CoverageModel coverage) {
 		super(plugin);
-		this.coverage = coverage;	
+		this.coverage = coverage;
 	}
 
 	@Override
-	public void load(HashSet<AddressRange> ranges) {
+	public void load(Set<AddressRange> ranges) {
 		modelRanges = new ArrayList<>(ranges);
 	}
 
 	@Override
-	public void update(TaskMonitor monitor) throws CancelledException
-	{
+	public void update(TaskMonitor monitor) throws CancelledException {
 		if (modelRanges == null) {
 			return;
 		}
@@ -53,8 +54,7 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 		var functions = new HashMap<Function, Set<AddressRange>>();
 		Set<AddressRange> unassigned = new HashSet<>();
 		var api = plugin.getApi();
-		for (var i = 0; i < modelRanges.size(); i++)
-		{
+		for (var i = 0; i < modelRanges.size(); i++) {
 			monitor.checkCanceled();
 			monitor.setMessage(String.format("Processing block %d / %d", i, modelRanges.size()));
 			var range = modelRanges.get(i);
@@ -64,7 +64,8 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 				addMessage(String.format("No function found at: %x", range.getMinAddress().getOffset()));
 				unassigned.add(range);
 			} else {
-				addMessage(String.format("Found function: '%s' at: %x", function.getName(), range.getMinAddress().getOffset()));
+				addMessage(String.format("Found function: '%s' at: %x", function.getName(),
+						range.getMinAddress().getOffset()));
 				var set = functions.get(function);
 				if (set == null) {
 					set = new HashSet<>();
@@ -77,7 +78,8 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 		processUnassigned(monitor, unassigned);
 	}
 
-	public void processFunctions(TaskMonitor monitor, HashMap<Function, Set<AddressRange>> functions) throws CancelledException {
+	public void processFunctions(TaskMonitor monitor, HashMap<Function, Set<AddressRange>> functions)
+			throws CancelledException {
 
 		var functionIterator = functions.keySet().iterator();
 		var i = 0;
@@ -85,7 +87,8 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 			i++;
 			monitor.checkCanceled();
 			var function = functionIterator.next();
-			monitor.setMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
+			monitor.setMessage(
+					String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
 			addMessage(String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
 			var body = function.getBody();
 			var ranges = functions.get(function);
@@ -93,15 +96,16 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 			var codeBlockInfo = processCodeBlocks(monitor, function, ranges);
 			var instructionInfo = processInstructions(monitor, function, ranges);
 			var addressRanges = StreamSupport.stream(body.getAddressRanges().spliterator(), false);
-			var sizes = addressRanges.map(r -> r.getMaxAddress().subtract(r.getMinAddress()) + 1);			
-			var functionSize = sizes.reduce(0L, (subTotal, s) -> subTotal + s);		
-			var row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(),
-					codeBlockInfo, instructionInfo, functionSize);
+			var sizes = addressRanges.map(r -> r.getMaxAddress().subtract(r.getMinAddress()) + 1);
+			var functionSize = sizes.reduce(0L, (subTotal, s) -> subTotal + s);
+			var row = new CoverageTableRow(function.getName(), body.getMinAddress().getOffset(), codeBlockInfo,
+					instructionInfo, functionSize);
 			rows.add(row);
 		}
 	}
 
-	public CoverageFraction processCodeBlocks(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
+	public CoverageFraction processCodeBlocks(TaskMonitor monitor, Function function, Set<AddressRange> ranges)
+			throws CancelledException {
 		var api = plugin.getApi();
 		var bbm = new BasicBlockModel(api.getCurrentProgram());
 		var body = function.getBody();
@@ -137,7 +141,8 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 		return new CoverageFraction(hitCodeBlocks, codeBlocks);
 	}
 
-	public CoverageFraction processInstructions(TaskMonitor monitor, Function function, Set<AddressRange> ranges) throws CancelledException {
+	public CoverageFraction processInstructions(TaskMonitor monitor, Function function, Set<AddressRange> ranges)
+			throws CancelledException {
 		var api = plugin.getApi();
 		var listing = api.getCurrentProgram().getListing();
 		var body = function.getBody();
@@ -147,7 +152,8 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 		while (instructionIterator.hasNext()) {
 			monitor.checkCanceled();
 			instructions++;
-			monitor.setMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
+			monitor.setMessage(
+					String.format("Processing function instructions (%s) %d", function.getName(), instructions));
 			addMessage(String.format("Processing function instructions (%s) %d", function.getName(), instructions));
 
 			var instruction = instructionIterator.next();
@@ -189,14 +195,14 @@ public class CoverageTableModel extends AbstractCoverageModel<HashSet<AddressRan
 	}
 
 	@Override
-	public void clear(TaskMonitor monitor) throws CancelledException{
+	public void clear(TaskMonitor monitor) throws CancelledException {
 		modelRanges = null;
 		rows = new ArrayList<>();
 		notifyUpdate(monitor);
 	}
-	
+
 	@Override
-	public ArrayList<CoverageTableRow> getModelData() {
+	public List<CoverageTableRow> getModelData() {
 		return rows;
 	}
 

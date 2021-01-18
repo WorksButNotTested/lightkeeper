@@ -1,6 +1,7 @@
 package lightkeeper.model.instruction;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressRangeImpl;
@@ -11,11 +12,11 @@ import lightkeeper.model.AbstractCoverageModel;
 import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageInstructionModel extends AbstractCoverageModel<HashSet<AddressRange>, HashSet<AddressRange>> implements ICoverageModelListener {
+public class CoverageInstructionModel extends AbstractCoverageModel<Set<AddressRange>, Set<AddressRange>>
+		implements ICoverageModelListener {
 	protected CoverageModel coverage;
-	protected HashSet<AddressRange> modelRanges;
-	protected HashSet<AddressRange> hits = new HashSet<>();
-
+	protected Set<AddressRange> modelRanges;
+	protected Set<AddressRange> hits = new HashSet<>();
 
 	public CoverageInstructionModel(LightKeeperPlugin plugin, CoverageModel coverage) {
 		super(plugin);
@@ -23,13 +24,12 @@ public class CoverageInstructionModel extends AbstractCoverageModel<HashSet<Addr
 	}
 
 	@Override
-	public void load(HashSet<AddressRange> ranges) {
+	public void load(Set<AddressRange> ranges) {
 		modelRanges = ranges;
 	}
 
 	@Override
-	public void update(TaskMonitor monitor) throws CancelledException
-	{
+	public void update(TaskMonitor monitor) throws CancelledException {
 		hits = new HashSet<>();
 		if (modelRanges == null) {
 			return;
@@ -38,7 +38,7 @@ public class CoverageInstructionModel extends AbstractCoverageModel<HashSet<Addr
 		var api = plugin.getApi();
 		var listing = api.getCurrentProgram().getListing();
 
-		for(AddressRange range: modelRanges) {
+		for (AddressRange range : modelRanges) {
 			monitor.checkCanceled();
 			var iterator = listing.getInstructions(range.getMinAddress(), true);
 			while (iterator.hasNext()) {
@@ -69,7 +69,7 @@ public class CoverageInstructionModel extends AbstractCoverageModel<HashSet<Addr
 	}
 
 	@Override
-	public HashSet<AddressRange> getModelData() {
+	public Set<AddressRange> getModelData() {
 		return hits;
 	}
 

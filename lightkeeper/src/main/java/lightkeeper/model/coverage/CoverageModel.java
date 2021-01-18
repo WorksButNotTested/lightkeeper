@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,10 +21,10 @@ import lightkeeper.io.file.DynamoRioFile;
 import lightkeeper.io.module.ModuleEntry;
 import lightkeeper.model.AbstractCoverageModel;
 
-public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<AddressRange>> {
-	protected ArrayList<CoverageListRow> rows = new ArrayList<>();
-	protected HashMap<DynamoRioFile, HashSet<AddressRange>> map = new HashMap<>();
-	protected HashSet<AddressRange> ranges = new HashSet<>();
+public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<AddressRange>> {
+	protected List<CoverageListRow> rows = new ArrayList<>();
+	protected Map<DynamoRioFile, HashSet<AddressRange>> map = new HashMap<>();
+	protected Set<AddressRange> ranges = new HashSet<>();
 
 	public CoverageModel(LightKeeperPlugin plugin) {
 		super(plugin);
@@ -47,6 +49,10 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 		try {
 			ranges = new HashSet<>();
 			for (CoverageListRow row : rows) {
+				CoverageListState state = row.getState();
+				if (state == CoverageListState.IGNORED)
+					continue;
+
 				DynamoRioFile file = row.getFile();
 				if (map.containsKey(file)) {
 					continue;
@@ -84,8 +90,14 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 				map.put(file, fileRanges);
 			}
 
-			var rangeStream = map.values().stream().flatMap(HashSet::stream);
-			ranges.addAll(rangeStream.collect(Collectors.toList()));
+			var added = rows.stream().filter(r -> r.state == CoverageListState.ADDED).map(r -> map.get(r.file))
+					.flatMap(HashSet::stream).collect(Collectors.toSet());
+
+			var subtracted = rows.stream().filter(r -> r.state == CoverageListState.SUBTRACTED)
+					.map(r -> map.get(r.file)).flatMap(HashSet::stream).collect(Collectors.toSet());
+
+			added.removeAll(subtracted);
+			ranges = added;
 
 			notifyUpdate(monitor);
 		} catch (AddressOverflowException e) {
@@ -93,12 +105,12 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, HashSet<
 		}
 	}
 
-	public ArrayList<CoverageListRow> getFileData() {
+	public List<CoverageListRow> getFileData() {
 		return this.rows;
 	}
 
 	@Override
-	public HashSet<AddressRange> getModelData() {
+	public Set<AddressRange> getModelData() {
 		return ranges;
 	}
 }
