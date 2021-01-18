@@ -40,6 +40,7 @@ import ghidra.util.task.TaskLauncher;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.controller.Controller;
+import lightkeeper.model.coverage.CoverageListState;
 import lightkeeper.model.list.CoverageList;
 import lightkeeper.model.table.CoverageTable;
 import lightkeeper.model.table.CoverageTableModel;
@@ -149,15 +150,28 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		listView.addKeyListener(new KeyListener() {
 			@Override
 			public void keyPressed(KeyEvent arg0) {
-				if (arg0.getKeyCode() != KeyEvent.VK_SPACE)
-					return;
-
 				int[] rows = listView.getSelectedRows();
 				List<Integer> rowsList = new ArrayList<Integer>(rows.length);
 				for (int i : rows) {
 					rowsList.add(i);
 				}
-				toggleRows(rowsList);
+				switch (arg0.getKeyChar()) {
+				case '+':
+					setRows(rowsList, CoverageListState.ADDED);
+					break;
+				case '-':
+					setRows(rowsList, CoverageListState.SUBTRACTED);
+					break;
+				case '\b':
+				case KeyEvent.VK_DELETE:
+					setRows(rowsList, CoverageListState.IGNORED);
+					break;
+				case '\n':
+					toggleRows(rowsList);
+					break;
+				default:
+					break;
+				}
 			}
 
 			@Override
@@ -200,6 +214,16 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		tabbedPane.addTab("Select", null, new JScrollPane(listView), "Coverage file selection");
 		panel.add(tabbedPane);
 		setVisible(true);
+	}
+
+	protected void setRows(List<Integer> rows, CoverageListState state) {
+		Task task = new Task("Select Coverage Files", true, true, true) {
+			@Override
+			public void run(TaskMonitor monitor) throws CancelledException {
+				controller.setCoverageFiles(monitor, rows, state);
+			}
+		};
+		TaskLauncher.launch(task);
 	}
 
 	protected void toggleRows(List<Integer> rows) {

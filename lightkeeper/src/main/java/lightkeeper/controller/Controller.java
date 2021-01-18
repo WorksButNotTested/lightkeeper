@@ -16,6 +16,8 @@ import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
 import lightkeeper.io.file.DynamoRioFile;
 import lightkeeper.model.ICoverageModelListener;
+import lightkeeper.model.coverage.CoverageListRow;
+import lightkeeper.model.coverage.CoverageListState;
 import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.table.CoverageTableModel;
@@ -180,4 +182,24 @@ public class Controller implements IEventListener, ICoverageModelListener {
 			this.addException(e);
 		}
 	}
+
+	public void setCoverageFiles(TaskMonitor monitor, List<Integer> rows, CoverageListState state)
+			throws CancelledException {
+		boolean changed = false;
+		try {
+			for (int row : rows) {
+				CoverageListRow listRow = model.getFileData().get(row);
+				if (listRow.getState() != state) {
+					listRow.setState(state);
+					changed = true;
+				}
+			}
+
+			if (changed)
+				model.update(monitor);
+		} catch (IOException e) {
+			this.addException(e);
+		}
+	}
+
 }

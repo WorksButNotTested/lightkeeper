@@ -37,4 +37,8 @@ public class CoverageListRow {
 			break;
 		}
 	}
+
+	public void setState(CoverageListState newState) {
+		state = newState;
+	}
 }
