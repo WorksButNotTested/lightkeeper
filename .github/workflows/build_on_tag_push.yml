@@ -21,7 +21,7 @@ jobs:
       id: get_version
       run: |
         echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-        echo ::set-output name=CHANGE_LOG::$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 @^)..@)
+        echo ::set-output name=CHANGE_LOG::$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
       
     - name: Download Ghidra release
       uses: carlosperate/download-file-action@v1.0.3
