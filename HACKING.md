@@ -13,4 +13,4 @@ Assuming you've read `$GHIDRA_HOME/Extensions/Eclipse/GhidraDev/GhidraDev_README
 
 * Change the Ghidra Paths in the following files:
   * [lightkeeper/.classpath](lightkeeper/.classpath)
-  * [lightkeeper/.project](lightkeeper/.classpath)
+  * [lightkeeper/.project](lightkeeper/.project)
