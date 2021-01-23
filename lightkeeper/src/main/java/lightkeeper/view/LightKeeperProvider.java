@@ -343,6 +343,9 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
+		var tableView = filteredTableView.getTable();
+		tableView.setPreferredScrollableViewportSize(tableView.getPreferredSize());
+		tableView.setFillsViewportHeight(true);
 		filteredTableView.repaint();
 	}
 }
