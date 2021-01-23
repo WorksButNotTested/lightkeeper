@@ -212,7 +212,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setTabPlacement(SwingConstants.RIGHT);
-		tabbedPane.addTab("View", null, new JScrollPane(tableView), "Coverage Data Viewing");
+		tabbedPane.addTab("View", null, new JScrollPane(filteredTableView), "Coverage Data Viewing");
 		tabbedPane.addTab("Select", null, new JScrollPane(listView), "Coverage file selection");
 		panel.add(tabbedPane);
 		setVisible(true);
