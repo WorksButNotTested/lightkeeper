@@ -32,6 +32,7 @@ import docking.action.MenuData;
 import docking.action.ToolBarData;
 import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
+import docking.widgets.table.GFilterTable;
 import docking.widgets.table.GTable;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
@@ -44,6 +45,7 @@ import lightkeeper.model.coverage.CoverageListState;
 import lightkeeper.model.list.CoverageList;
 import lightkeeper.model.table.CoverageTable;
 import lightkeeper.model.table.CoverageTableModel;
+import lightkeeper.model.table.CoverageTableRow;
 import resources.Icons;
 import resources.ResourceManager;
 
@@ -56,7 +58,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	protected CoverageTable table;
 	protected CoverageList list;
 	protected Controller controller;
-	protected GTable tableView;
+	protected GFilterTable<CoverageTableRow> filteredTableView;
 	protected GTable listView;
 	protected JPanel panel;
 
@@ -77,8 +79,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		panel = new JPanel(new BorderLayout());
 		table.addTableModelListener(this);
 
-		tableView = new GTable();
-		tableView.setModel(table);
+		filteredTableView = new GFilterTable<CoverageTableRow>(table);
+		var tableView = filteredTableView.getTable();
 		tableView.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		tableView.setUserSortingEnabled(true);
 		tableView.addMouseListener(new MouseAdapter() {
@@ -240,7 +242,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		String res = null;
 		try {
 			res = getClass().getPackage().getImplementationVersion();
-		} catch (Exception e) {	}
+		} catch (Exception e) {
+		}
 		return (res != null ? res : "version unknown");
 	}
 
@@ -340,6 +343,6 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 	@Override
 	public void tableChanged(TableModelEvent arg0) {
-		tableView.repaint();
+		filteredTableView.repaint();
 	}
 }
