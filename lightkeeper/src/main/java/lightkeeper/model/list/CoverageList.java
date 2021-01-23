@@ -14,7 +14,7 @@ import lightkeeper.model.coverage.CoverageModel;
 public class CoverageList extends AbstractSortedTableModel<CoverageListRow> implements ICoverageModelListener {
 	protected CoverageModel model;
 
-	private String[] columnNames = { "", "File" };
+	private String[] columnNames = { "", "File", "Unique Blocks", "Blocks", "Total Blocks" };
 
 	public CoverageList(CoverageModel model) {
 		this.model = model;
@@ -55,6 +55,12 @@ public class CoverageList extends AbstractSortedTableModel<CoverageListRow> impl
 			return row.getState();
 		case 1:
 			return row.getName();
+		case 2:
+			return row.getUniqueMatchedBlocks();
+		case 3:
+			return row.getMatchedBlocks();
+		case 4:
+			return row.getTotalBlocks();
 		default:
 			throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}

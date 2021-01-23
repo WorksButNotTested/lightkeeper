@@ -5,10 +5,17 @@ import lightkeeper.io.file.DynamoRioFile;
 public class CoverageListRow {
 	protected CoverageListState state;
 	protected DynamoRioFile file;
+	protected long uniqueMatchedBlocks;
+	protected long matchedBlocks;
+	protected long totalBlocks;
 
-	public CoverageListRow(CoverageListState state, DynamoRioFile file) {
+	public CoverageListRow(CoverageListState state, DynamoRioFile file, long uniqueMatchedBlocks, long matchedBlocks,
+			long totalBlocks) {
 		this.state = state;
 		this.file = file;
+		this.uniqueMatchedBlocks = uniqueMatchedBlocks;
+		this.matchedBlocks = matchedBlocks;
+		this.totalBlocks = totalBlocks;
 	}
 
 	public CoverageListState getState() {
@@ -40,5 +47,17 @@ public class CoverageListRow {
 
 	public void setState(CoverageListState newState) {
 		state = newState;
+	}
+
+	public long getUniqueMatchedBlocks() {
+		return this.uniqueMatchedBlocks;
+	}
+
+	public long getMatchedBlocks() {
+		return matchedBlocks;
+	}
+
+	public long getTotalBlocks() {
+		return totalBlocks;
 	}
 }

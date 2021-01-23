@@ -40,8 +40,27 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 
 	@Override
 	public void load(DynamoRioFile file) {
-		var row = new CoverageListRow(CoverageListState.ADDED, file);
+		var selectedModules = getSelectedModules(file);
+		var ids = this.getSelectedModuleIds(selectedModules);
+		var blocks = file.getBlocks();
+		var matched = blocks.stream().filter(b -> ids.contains(b.getModule())).collect(Collectors.toList());
+		var uniqueBlocks = new HashSet<>(matched);
+		var row = new CoverageListRow(CoverageListState.ADDED, file, uniqueBlocks.size(), matched.size(),
+				blocks.size());
 		rows.add(row);
+	}
+
+	protected List<ModuleEntry> getSelectedModules(DynamoRioFile file) {
+		var api = plugin.getApi();
+		var programFileName = api.getCurrentProgram().getName();
+		var selectedModules = file.getModules().stream()
+				.filter(m -> new File(m.getPath()).getName().equals(programFileName)).collect(Collectors.toList());
+		return selectedModules;
+	}
+
+	protected Set<Integer> getSelectedModuleIds(List<ModuleEntry> selectedModules) {
+		Set<Integer> ids = selectedModules.stream().map(ModuleEntry::getId).collect(Collectors.toSet());
+		return ids;
 	}
 
 	@Override
@@ -61,11 +80,8 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 
 				var fileRanges = new HashSet<AddressRange>();
 				var api = plugin.getApi();
-				var programFileName = api.getCurrentProgram().getName();
 				var md5 = api.getCurrentProgram().getExecutableMD5();
-				var selectedModules = file.getModules().stream()
-						.filter(m -> new File(m.getPath()).getName().equals(programFileName))
-						.collect(Collectors.toList());
+				var selectedModules = getSelectedModules(file);
 
 				var misMatch = selectedModules.stream().filter(m -> m.getChecksum() != null)
 						.filter(m -> !m.getChecksum().equalsIgnoreCase(md5)).findFirst();
@@ -75,7 +91,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 							module.getChecksum()));
 				}
 
-				Set<Integer> ids = selectedModules.stream().map(ModuleEntry::getId).collect(Collectors.toSet());
+				Set<Integer> ids = this.getSelectedModuleIds(selectedModules);
 
 				var baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
 				for (BlockEntry block : file.getBlocks()) {
