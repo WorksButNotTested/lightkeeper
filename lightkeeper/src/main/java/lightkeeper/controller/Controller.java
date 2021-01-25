@@ -21,6 +21,7 @@ import lightkeeper.model.coverage.CoverageListState;
 import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.table.CoverageTableModel;
+import lightkeeper.model.table.CoverageTableRow;
 
 public class Controller implements IEventListener, ICoverageModelListener {
 	protected LightKeeperPlugin plugin;
@@ -36,14 +37,13 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		this.instructionModel = instructionModel;
 	}
 
-	public void goTo(int row) {
+	public void goTo(CoverageTableRow row) {
 		var codeViewerService = plugin.getTool().getService(CodeViewerService.class);
 		if (codeViewerService == null) {
 			return;
 		}
-
-		var modelRow = tableModel.getModelData().get(row);
-		var addr = modelRow.getAddress();
+		
+		var addr = row.getAddress();
 
 		var api = plugin.getApi();
 		var program = api.getCurrentProgram();

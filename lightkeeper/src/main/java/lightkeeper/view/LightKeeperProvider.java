@@ -87,8 +87,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					var row = tableView.getSelectedRow();
-					if (row == -1) {
+					var row = filteredTableView.getSelectedRowObject();					
+					if (row == null) {
 						return;
 					}
 
