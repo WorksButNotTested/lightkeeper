@@ -1,9 +1,9 @@
 name: Ghidra Extension Build
 
 env:
-  ghidra-url: https://ghidra-sre.org/ghidra_9.2.1_PUBLIC_20201215.zip
-  ghidra-zip-filename: ghidra_9.2.1_PUBLIC.zip
-  ghidra-directory: ghidra_9.2.1_PUBLIC
+  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_10.0_build/ghidra_10.0_PUBLIC_20210621.zip
+  ghidra-zip-filename: ghidra_10.0_PUBLIC_20210621.zip
+  ghidra-directory: ghidra_10.0_PUBLIC
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       run: |
         echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         echo ::set-output name=CHANGE_LOG::$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
-      
+
     - name: Download Ghidra release
       uses: carlosperate/download-file-action@v1.0.3
       id: download-ghidra
@@ -55,7 +55,7 @@ jobs:
         prerelease: false
 
     - name: Upload Release Asset
-      id: upload-release-asset 
+      id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
