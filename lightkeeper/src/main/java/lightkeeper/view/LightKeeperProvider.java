@@ -22,6 +22,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import docking.ActionContext;
@@ -82,8 +83,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 		filteredTableView = new GFilterTable<CoverageTableRow>(table);
 		var tableView = filteredTableView.getTable();
-		tableView.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		tableView.setUserSortingEnabled(true);
+		tableView.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 		tableView.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -113,10 +114,30 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					var newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(newFont);
 				}
-				if (data.getColumnViewIndex() != 0) {
+								
+				int column = data.getColumnViewIndex();
+				switch(column) {
+					case 0:
+						setPercentageBackgroundColor(component, coverage);
+					case 1:
+					case 2:
+					case 3:
+					case 4:					
+						resizeColumn(component, column);
+						break;
+					default:
+						break;
+				}
+				
+				if (column != 0) {
 					return component;
 				}
+													
+				return component;
 
+			}
+			
+			private void setPercentageBackgroundColor(Component component, double coverage) {
 				if (coverage < 0.20d) {
 					component.setBackground(Color.BLUE);
 					component.setForeground(Color.WHITE);
@@ -130,9 +151,35 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					component.setBackground(Color.RED);
 					component.setForeground(Color.WHITE);
 				}
-				return component;
-
 			}
+			
+			private void resizeColumn(Component component, int column)
+			{				
+
+				TableColumn tableColumn = tableView.getColumnModel().getColumn(column);
+				Object value = tableColumn.getHeaderValue();
+				TableCellRenderer renderer = tableColumn.getHeaderRenderer();
+
+				if (renderer == null)
+				{
+					renderer = tableView.getTableHeader().getDefaultRenderer();
+				}
+
+				Component c = renderer.getTableCellRendererComponent(tableView, value, false, false, -1, column);
+				int headerWidth = c.getPreferredSize().width;
+				
+				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
+				
+				int newWidth = Math.max(headerWidth, itemWidth);
+				
+				if (newWidth > tableColumn.getPreferredWidth()) {
+					
+					tableView.getTableHeader().setResizingColumn(tableColumn);
+					tableColumn.setWidth(newWidth);
+					
+				}
+			}
+
 
 		});
 
