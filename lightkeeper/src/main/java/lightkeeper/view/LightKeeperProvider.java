@@ -34,6 +34,8 @@ import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.table.GFilterTable;
 import docking.widgets.table.GTable;
+import docking.widgets.table.GTableCellRenderer;
+import docking.widgets.table.GTableCellRenderingData;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
@@ -96,34 +98,44 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				}
 			}
 		});
-		tableView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {			
+			
 			@Override
-			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row,
-						column);
+			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
+				
+				int row = data.getRowViewIndex();							
+				
+				var component = super.getTableCellRendererComponent(data);				
 				var modelRow = model.getModelData().get(row);
 				var coverage = modelRow.getCoverage().getDouble();
 				if (coverage == 0.0d) {
 					component.setForeground(Color.BLACK);
-					var font = component.getFont();
+					var font = this.getFont();
 					var newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(newFont);
-				} else if (coverage < 0.20d) {
-					component.setForeground(Color.BLUE);
+				} 
+				if (data.getColumnViewIndex() != 0) {
+					return component;
+				}
+				
+				if (coverage < 0.20d) {
+					component.setBackground(Color.BLUE);
+					component.setForeground(Color.WHITE);
 				} else if (coverage < 0.40d) {
-					component.setForeground(Color.GREEN);
+					component.setBackground(Color.GREEN);
 				} else if (coverage < 0.60d) {
-					component.setForeground(Color.YELLOW);
+					component.setBackground(Color.YELLOW);
 				} else if (coverage < 0.80d) {
-					component.setForeground(Color.ORANGE);
+					component.setBackground(Color.ORANGE);
 				} else {
-					component.setForeground(Color.RED);
+					component.setBackground(Color.RED);
+					component.setForeground(Color.WHITE);
 				}
 				return component;
 
 			}
-		});
+		    
+		});		
 
 		listView = new GTable() {
 			@Override
