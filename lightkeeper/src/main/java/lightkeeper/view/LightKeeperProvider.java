@@ -24,6 +24,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.text.Highlighter;
 
 import docking.ActionContext;
 import docking.ComponentProvider;
@@ -98,8 +99,18 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				}
 			}
 		});
+				
+		tableView.getColumnModel().getColumn(1).setCellRenderer(new GTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
+				var component = super.getTableCellRendererComponent(data);
+				var tableMonoFont = new Font("monospaced", Font.PLAIN, this.getFont().getSize());
+				component.setFont(tableMonoFont);
+				return component;
+			}
+		});
 		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {
-
+				
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
 
@@ -107,15 +118,15 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 				var component = super.getTableCellRendererComponent(data);
 				var modelRow = model.getModelData().get(row);
-				var coverage = modelRow.getCoverage().getDouble();
-				if (coverage == 0.0d) {
-					component.setForeground(Color.BLACK);
-					var font = this.getFont();
-					var newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
-					component.setFont(newFont);
-				}
-								
+				var coverage = modelRow.getCoverage().getDouble();				
+																			
 				int column = data.getColumnViewIndex();
+				if (coverage == 0.0d) {				
+					var font = this.getFont();
+					var italic = font.deriveFont(font.getStyle() | Font.ITALIC);
+					component.setFont(italic);
+				}
+				
 				switch(column) {
 					case 0:
 						setPercentageBackgroundColor(component, coverage);
