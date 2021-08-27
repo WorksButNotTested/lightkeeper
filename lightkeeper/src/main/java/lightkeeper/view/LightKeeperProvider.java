@@ -88,7 +88,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2) {
-					var row = filteredTableView.getSelectedRowObject();					
+					var row = filteredTableView.getSelectedRowObject();
 					if (row == null) {
 						return;
 					}
@@ -97,14 +97,14 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				}
 			}
 		});
-		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {			
-			
+		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {
+
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
-				
-				int row = data.getRowViewIndex();							
-				
-				var component = super.getTableCellRendererComponent(data);				
+
+				int row = data.getRowViewIndex();
+
+				var component = super.getTableCellRendererComponent(data);
 				var modelRow = model.getModelData().get(row);
 				var coverage = modelRow.getCoverage().getDouble();
 				if (coverage == 0.0d) {
@@ -112,11 +112,11 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					var font = this.getFont();
 					var newFont = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(newFont);
-				} 
+				}
 				if (data.getColumnViewIndex() != 0) {
 					return component;
 				}
-				
+
 				if (coverage < 0.20d) {
 					component.setBackground(Color.BLUE);
 					component.setForeground(Color.WHITE);
@@ -133,8 +133,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				return component;
 
 			}
-		    
-		});		
+
+		});
 
 		listView = new GTable() {
 			@Override
@@ -259,10 +259,26 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	}
 
 	private void createActions() {
+
 		DockingAction aboutAction = new DockingAction("About", getName()) {
 			@Override
 			public void actionPerformed(ActionContext context) {
-				Msg.showInfo(getClass(), panel, "About", "Light Keeper: " + getVersionFromManifest());
+				StringBuilder sb = new StringBuilder();
+				sb.append("<html>");
+				sb.append("Light Keeper: ");
+				sb.append(getVersionFromManifest());
+				sb.append("<div>");
+				sb.append("Icons made by ");				
+				sb.append("<a href=\"https://www.flaticon.com/authors/pixel-perfect\" title=\"Pixel Perfect\">");				
+				sb.append("Pixel Perfect");
+				sb.append("</a>");
+				sb.append(" from ");
+				sb.append("<a href=\"https://www.flaticon.com/\" title=\"Flaticon\">");
+				sb.append("www.flaticon.com");
+				sb.append("</div>");
+				sb.append("</html>");
+				
+				Msg.showInfo(getClass(), panel, "About", sb.toString());
 			}
 		};
 		aboutAction.setMenuBarData(new MenuData(new String[] { "About" }, Icons.HELP_ICON, "Help"));
