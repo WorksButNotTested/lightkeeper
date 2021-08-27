@@ -79,7 +79,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		createActions();
 		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
-
+	
 	private void buildPanel() {
 		panel = new JPanel(new BorderLayout());
 		table.addTableModelListener(this);
@@ -105,14 +105,23 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					controller.goTo(row);
 				}
 			}
-		});		
-        
+		});		        
 		tableView.getColumnModel().getColumn(1).setCellRenderer(new GTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
 				var component = super.getTableCellRendererComponent(data);
 				var tableMonoFont = new Font("monospaced", Font.PLAIN, this.getFont().getSize());
 				component.setFont(tableMonoFont);
+				
+				TableColumn tableColumn = tableView.getColumnModel().getColumn(1);			
+				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;		
+				if (itemWidth > tableColumn.getPreferredWidth()) {
+					
+					tableView.getTableHeader().setResizingColumn(tableColumn);
+					tableColumn.setWidth(itemWidth);
+					
+				}
+				
 				return component;
 			}
 		});
@@ -133,7 +142,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					var italic = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(italic);
 				}
-				
+								
 				switch(column) {
 					case 0:
 						setPercentageBackgroundColor(component, coverage);
@@ -141,7 +150,14 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					case 2:
 					case 3:
 					case 4:					
-						resizeColumn(component, column);
+						TableColumn tableColumn = tableView.getColumnModel().getColumn(column);			
+						int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;		
+						if (itemWidth > tableColumn.getPreferredWidth()) {
+							
+							tableView.getTableHeader().setResizingColumn(tableColumn);
+							tableColumn.setWidth(itemWidth);
+							
+						}
 						break;
 					default:
 						break;
@@ -157,50 +173,23 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			
 			private void setPercentageBackgroundColor(Component component, double coverage) {
 				if (coverage < 0.20d) {
-					component.setBackground(Color.BLUE);
+					component.setBackground(Color.BLUE);					
 					component.setForeground(Color.WHITE);
 				} else if (coverage < 0.40d) {
 					component.setBackground(Color.GREEN);
+					component.setForeground(Color.BLACK);
 				} else if (coverage < 0.60d) {
 					component.setBackground(Color.YELLOW);
+					component.setForeground(Color.BLACK);
 				} else if (coverage < 0.80d) {
 					component.setBackground(Color.ORANGE);
+					component.setForeground(Color.BLACK);
 				} else {
 					component.setBackground(Color.RED);
 					component.setForeground(Color.WHITE);
 				}
-			}
-			
-			private void resizeColumn(Component component, int column)
-			{				
-
-				TableColumn tableColumn = tableView.getColumnModel().getColumn(column);
-				Object value = tableColumn.getHeaderValue();
-				TableCellRenderer renderer = tableColumn.getHeaderRenderer();
-
-				if (renderer == null)
-				{
-					renderer = tableView.getTableHeader().getDefaultRenderer();
-				}
-
-				Component c = renderer.getTableCellRendererComponent(tableView, value, false, false, -1, column);
-				int headerWidth = c.getPreferredSize().width;
-				
-				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
-				
-				int newWidth = Math.max(headerWidth, itemWidth);
-				
-				if (newWidth > tableColumn.getPreferredWidth()) {
-					
-					tableView.getTableHeader().setResizingColumn(tableColumn);
-					tableColumn.setWidth(newWidth);
-					
-				}
-			}
-
-
-		});
-
+			}				
+		});		
 		listView = new GTable() {
 			@Override
 			public void doLayout() {
@@ -434,10 +423,25 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	}
 
 	@Override
-	public void tableChanged(TableModelEvent arg0) {
+	public void tableChanged(TableModelEvent arg0) {		
 		var tableView = filteredTableView.getTable();
 		tableView.setPreferredScrollableViewportSize(tableView.getPreferredSize());
 		tableView.setFillsViewportHeight(true);
+		for(int i = 0; i < tableView.getColumnCount(); i++) {
+			TableColumn tableColumn = tableView.getColumnModel().getColumn(i);
+								
+			Object value = tableColumn.getHeaderValue();
+			TableCellRenderer renderer = tableColumn.getHeaderRenderer();
+			if (renderer == null)
+			{
+				renderer = tableView.getTableHeader().getDefaultRenderer();
+			}
+
+			Component c = renderer.getTableCellRendererComponent(tableView, value, false, false, -1, i);
+			int headerWidth = c.getPreferredSize().width;			
+			tableView.getTableHeader().setResizingColumn(tableColumn);
+			tableColumn.setWidth(headerWidth);
+		}
 		filteredTableView.repaint();
 	}
 }
