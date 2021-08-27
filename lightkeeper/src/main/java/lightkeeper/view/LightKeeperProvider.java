@@ -24,7 +24,6 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.text.Highlighter;
 
 import docking.ActionContext;
 import docking.ComponentProvider;
@@ -37,6 +36,9 @@ import docking.widgets.table.GFilterTable;
 import docking.widgets.table.GTable;
 import docking.widgets.table.GTableCellRenderer;
 import docking.widgets.table.GTableCellRenderingData;
+import docking.widgets.table.TableSortState;
+import docking.widgets.table.TableSortStateEditor;
+import docking.widgets.table.ColumnSortState.SortDirection;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
@@ -81,6 +83,11 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	private void buildPanel() {
 		panel = new JPanel(new BorderLayout());
 		table.addTableModelListener(this);
+		var tableSortEditor = new TableSortStateEditor();
+		tableSortEditor.addSortedColumn(0, SortDirection.DESCENDING);
+		tableSortEditor.addSortedColumn(1, SortDirection.ASCENDING);
+		TableSortState state = tableSortEditor.createTableSortState();		
+		table.setTableSortState(state);
 
 		filteredTableView = new GFilterTable<CoverageTableRow>(table);
 		var tableView = filteredTableView.getTable();
@@ -98,8 +105,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					controller.goTo(row);
 				}
 			}
-		});
-				
+		});		
+        
 		tableView.getColumnModel().getColumn(1).setCellRenderer(new GTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
