@@ -16,7 +16,6 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
@@ -224,8 +223,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setTabPlacement(SwingConstants.RIGHT);
-		tabbedPane.addTab("View", null, new JScrollPane(filteredTableView), "Coverage Data Viewing");
-		tabbedPane.addTab("Select", null, new JScrollPane(listView), "Coverage file selection");
+		tabbedPane.addTab("View", null, filteredTableView, "Coverage Data Viewing");
+		tabbedPane.addTab("Select", null, listView, "Coverage file selection");
 		panel.add(tabbedPane);
 		setVisible(true);
 	}
