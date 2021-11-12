@@ -79,14 +79,14 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		createActions();
 		setIcon(ResourceManager.loadImage("images/lighthouse.png"));
 	}
-	
+
 	private void buildPanel() {
 		panel = new JPanel(new BorderLayout());
 		table.addTableModelListener(this);
 		var tableSortEditor = new TableSortStateEditor();
 		tableSortEditor.addSortedColumn(0, SortDirection.DESCENDING);
 		tableSortEditor.addSortedColumn(1, SortDirection.ASCENDING);
-		TableSortState state = tableSortEditor.createTableSortState();		
+		TableSortState state = tableSortEditor.createTableSortState();
 		table.setTableSortState(state);
 
 		filteredTableView = new GFilterTable<CoverageTableRow>(table);
@@ -105,28 +105,28 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					controller.goTo(row);
 				}
 			}
-		});		        
+		});
 		tableView.getColumnModel().getColumn(1).setCellRenderer(new GTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
 				var component = super.getTableCellRendererComponent(data);
 				var tableMonoFont = new Font("monospaced", Font.PLAIN, this.getFont().getSize());
 				component.setFont(tableMonoFont);
-				
-				TableColumn tableColumn = tableView.getColumnModel().getColumn(1);			
-				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;		
+
+				TableColumn tableColumn = tableView.getColumnModel().getColumn(1);
+				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
 				if (itemWidth > tableColumn.getPreferredWidth()) {
-					
+
 					tableView.getTableHeader().setResizingColumn(tableColumn);
 					tableColumn.setWidth(itemWidth);
-					
+
 				}
-				
+
 				return component;
 			}
 		});
 		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {
-				
+
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
 
@@ -134,46 +134,46 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 				var component = super.getTableCellRendererComponent(data);
 				var modelRow = model.getModelData().get(row);
-				var coverage = modelRow.getCoverage().getDouble();				
-																			
+				var coverage = modelRow.getCoverage().getDouble();
+
 				int column = data.getColumnViewIndex();
-				if (coverage == 0.0d) {				
+				if (coverage == 0.0d) {
 					var font = this.getFont();
 					var italic = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(italic);
 				}
-								
+
 				switch(column) {
 					case 0:
 						setPercentageBackgroundColor(component, coverage);
 					case 1:
 					case 2:
 					case 3:
-					case 4:					
-						TableColumn tableColumn = tableView.getColumnModel().getColumn(column);			
-						int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;		
+					case 4:
+						TableColumn tableColumn = tableView.getColumnModel().getColumn(column);
+						int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
 						if (itemWidth > tableColumn.getPreferredWidth()) {
-							
+
 							tableView.getTableHeader().setResizingColumn(tableColumn);
 							tableColumn.setWidth(itemWidth);
-							
+
 						}
 						break;
 					default:
 						break;
 				}
-				
+
 				if (column != 0) {
 					return component;
 				}
-													
+
 				return component;
 
 			}
-			
+
 			private void setPercentageBackgroundColor(Component component, double coverage) {
 				if (coverage < 0.20d) {
-					component.setBackground(Color.BLUE);					
+					component.setBackground(Color.BLUE);
 					component.setForeground(Color.WHITE);
 				} else if (coverage < 0.40d) {
 					component.setBackground(Color.GREEN);
@@ -188,8 +188,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					component.setBackground(Color.RED);
 					component.setForeground(Color.WHITE);
 				}
-			}				
-		});		
+			}
+		});
 		listView = new GTable() {
 			@Override
 			public void doLayout() {
@@ -322,8 +322,8 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				sb.append("Light Keeper: ");
 				sb.append(getVersionFromManifest());
 				sb.append("<div>");
-				sb.append("Icons made by ");				
-				sb.append("<a href=\"https://www.flaticon.com/authors/pixel-perfect\" title=\"Pixel Perfect\">");				
+				sb.append("Icons made by ");
+				sb.append("<a href=\"https://www.flaticon.com/authors/pixel-perfect\" title=\"Pixel Perfect\">");
 				sb.append("Pixel Perfect");
 				sb.append("</a>");
 				sb.append(" from ");
@@ -331,7 +331,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				sb.append("www.flaticon.com");
 				sb.append("</div>");
 				sb.append("</html>");
-				
+
 				Msg.showInfo(getClass(), panel, "About", sb.toString());
 			}
 		};
@@ -423,13 +423,13 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 	}
 
 	@Override
-	public void tableChanged(TableModelEvent arg0) {		
+	public void tableChanged(TableModelEvent arg0) {
 		var tableView = filteredTableView.getTable();
 		tableView.setPreferredScrollableViewportSize(tableView.getPreferredSize());
 		tableView.setFillsViewportHeight(true);
 		for(int i = 0; i < tableView.getColumnCount(); i++) {
 			TableColumn tableColumn = tableView.getColumnModel().getColumn(i);
-								
+
 			Object value = tableColumn.getHeaderValue();
 			TableCellRenderer renderer = tableColumn.getHeaderRenderer();
 			if (renderer == null)
@@ -438,7 +438,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			}
 
 			Component c = renderer.getTableCellRendererComponent(tableView, value, false, false, -1, i);
-			int headerWidth = c.getPreferredSize().width;			
+			int headerWidth = c.getPreferredSize().width;
 			tableView.getTableHeader().setResizingColumn(tableColumn);
 			tableColumn.setWidth(headerWidth);
 		}

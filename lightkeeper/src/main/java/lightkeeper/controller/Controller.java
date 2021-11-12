@@ -42,7 +42,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		if (codeViewerService == null) {
 			return;
 		}
-		
+
 		var addr = row.getAddress();
 
 		var api = plugin.getApi();
@@ -75,7 +75,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 				monitor.checkCanceled();
 				var min = range.getMinAddress();
 				var max = range.getMaxAddress();
-				colorService.setBackgroundColor(min, max, Color.YELLOW);
+				colorService.setBackgroundColor(min, max, Color.GREEN);
 			}
 			completed = true;
 		} finally {

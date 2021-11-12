@@ -77,7 +77,7 @@ public class DisassemblyController implements ICoverageModelListener{
 						continue;
 					}
 
-					token.setHighlight(Color.YELLOW);
+					token.setHighlight(Color.GREEN);
 				}
 			}
 		}
