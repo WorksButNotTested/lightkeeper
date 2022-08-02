@@ -162,8 +162,7 @@ public class DynamoRioFile implements IEventListener {
 			var block = blockReader.read();
 			long moduleLimit = moduleLimits.get(block.getModule());
 			if (block.getEnd() > moduleLimit) {
-				throw new IOException(
-						String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
+				addMessage(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
 			}
 			blocks.add(block);
 		}
