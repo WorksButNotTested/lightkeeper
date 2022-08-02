@@ -18,7 +18,8 @@ public class ModuleReader {
 			"^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (0x)?(?<checksum>[0-9a-fA-F]+), (0x)?(?<timestamp>[0-9a-fA-F]+), (?<path>.+)$");
 
 	protected final String COLUMN_2_HDR_LINUX = "Columns: id, base, end, entry, path";
-	protected final Pattern COLUMN_2_HDR_LINUX_FMT = null;
+	protected final Pattern COLUMN_2_HDR_LINUX_FMT = Pattern.compile(
+			"^\\s*(?<id>\\d+), (0x)?(?<start>[0-9a-fA-F]+), (0x)?(?<end>[0-9a-fA-F]+), (0x)?(?<entry>[0-9a-fA-F]+), (?<path>.+)$");;
 
 	protected final String COLUMN_3_HDR_WIN = "Columns: id, containing_id, start, end, entry, checksum, timestamp, path";
 	protected final Pattern COLUMN_3_HDR_WIN_FMT = null;
