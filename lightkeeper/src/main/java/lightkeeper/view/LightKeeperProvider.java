@@ -16,12 +16,12 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
@@ -125,8 +125,7 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				return component;
 			}
 		});
-		tableView.setDefaultRenderer(Object.class, new GTableCellRenderer() {
-
+		tableView.getColumnModel().getColumn(0).setCellRenderer(new GTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
 
@@ -136,36 +135,13 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				var modelRow = model.getModelData().get(row);
 				var coverage = modelRow.getCoverage().getDouble();
 
-				int column = data.getColumnViewIndex();
 				if (coverage == 0.0d) {
 					var font = this.getFont();
 					var italic = font.deriveFont(font.getStyle() | Font.ITALIC);
 					component.setFont(italic);
 				}
 
-				switch(column) {
-					case 0:
-						setPercentageBackgroundColor(component, coverage);
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						TableColumn tableColumn = tableView.getColumnModel().getColumn(column);
-						int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
-						if (itemWidth > tableColumn.getPreferredWidth()) {
-
-							tableView.getTableHeader().setResizingColumn(tableColumn);
-							tableColumn.setWidth(itemWidth);
-
-						}
-						break;
-					default:
-						break;
-				}
-
-				if (column != 0) {
-					return component;
-				}
+				setPercentageBackgroundColor(component, coverage);
 
 				return component;
 
@@ -188,6 +164,36 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 					component.setBackground(Color.RED);
 					component.setForeground(Color.WHITE);
 				}
+			}
+		});
+
+		tableView.getColumnModel().getColumn(4).setCellRenderer(new GTableCellRenderer() {
+			@Override
+			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
+
+				int row = data.getRowViewIndex();
+
+				var component = super.getTableCellRendererComponent(data);
+				var modelRow = model.getModelData().get(row);
+				var coverage = modelRow.getCoverage().getDouble();
+
+				int column = data.getColumnViewIndex();
+				if (coverage == 0.0d) {
+					var font = this.getFont();
+					var italic = font.deriveFont(font.getStyle() | Font.ITALIC);
+					component.setFont(italic);
+				}
+
+				TableColumn tableColumn = tableView.getColumnModel().getColumn(column);
+				int itemWidth = component.getPreferredSize().width + tableView.getIntercellSpacing().width;
+				if (itemWidth > tableColumn.getPreferredWidth()) {
+
+					tableView.getTableHeader().setResizingColumn(tableColumn);
+					tableColumn.setWidth(itemWidth);
+
+				}
+
+				return component;
 			}
 		});
 		listView = new GTable() {
@@ -249,15 +255,10 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 			public void keyTyped(KeyEvent arg0) {
 			}
 		});
-		listView.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+		listView.getColumnModel().getColumn(0).setCellRenderer(new GTableCellRenderer() {
 			@Override
-			public Component getTableCellRendererComponent(JTable cellTable, Object value, boolean isSelected,
-					boolean hasFocus, int row, int column) {
-				var component = super.getTableCellRendererComponent(cellTable, value, isSelected, hasFocus, row,
-						column);
-				if (column != 0)
-					return component;
-
+			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
+				int row = data.getRowViewIndex();
 				switch (list.getModelData().get(row).getState()) {
 				case ADDED:
 					return new JLabel(Icons.ADD_ICON);
@@ -275,10 +276,15 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		TableColumn statusColumn = listView.getColumnModel().getColumn(0);
 		listView.getTableHeader().setResizingColumn(statusColumn);
 
+		JPanel listPanel = new JPanel(new BorderLayout());
+		listPanel.add(listView.getTableHeader(), BorderLayout.NORTH);
+		JScrollPane listScroll = new JScrollPane(listView);
+		listPanel.add(listScroll, BorderLayout.CENTER);
+
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setTabPlacement(SwingConstants.RIGHT);
 		tabbedPane.addTab("View", null, filteredTableView, "Coverage Data Viewing");
-		tabbedPane.addTab("Select", null, listView, "Coverage file selection");
+		tabbedPane.addTab("Select", null, listPanel, "Coverage file selection");
 		panel.add(tabbedPane);
 		setVisible(true);
 	}
@@ -427,13 +433,12 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 		var tableView = filteredTableView.getTable();
 		tableView.setPreferredScrollableViewportSize(tableView.getPreferredSize());
 		tableView.setFillsViewportHeight(true);
-		for(int i = 0; i < tableView.getColumnCount(); i++) {
+		for (int i = 0; i < tableView.getColumnCount(); i++) {
 			TableColumn tableColumn = tableView.getColumnModel().getColumn(i);
 
 			Object value = tableColumn.getHeaderValue();
 			TableCellRenderer renderer = tableColumn.getHeaderRenderer();
-			if (renderer == null)
-			{
+			if (renderer == null) {
 				renderer = tableView.getTableHeader().getDefaultRenderer();
 			}
 
