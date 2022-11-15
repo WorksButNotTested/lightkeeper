@@ -49,7 +49,7 @@ public abstract class AbstractCoverageModel<T, U> {
 		}
 	}
 
-	public abstract void load(T ranges);
+	public abstract void load(T ranges) throws IOException;
 
 	public abstract void update(TaskMonitor monitor) throws CancelledException, IOException;
 

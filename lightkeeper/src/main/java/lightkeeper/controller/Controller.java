@@ -128,6 +128,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 				monitor.setProgress(0);
 
 				var dataFile = new DynamoRioFile(file);
+
 				dataFile.addListener(this);
 				dataFile.read(monitor);
 

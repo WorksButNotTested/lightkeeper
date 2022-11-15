@@ -46,8 +46,8 @@ public class CountedByteProvider implements ByteProvider {
 
 	@Override
 	public String getName() {
-		return "InputStreamByteProvider Index=0x" + Long.toHexString(currentIndex) + " Length=0x" +
-				Long.toHexString(length);
+		return "InputStreamByteProvider Index=0x" + Long.toHexString(currentIndex) + " Length=0x"
+				+ Long.toHexString(length);
 	}
 
 	@Override
@@ -69,8 +69,7 @@ public class CountedByteProvider implements ByteProvider {
 	public byte readByte(long index) throws IOException {
 		if (index < currentIndex) {
 			throw new IOException("Attempted to read byte that was already read.");
-		}
-		else if (index > currentIndex) {
+		} else if (index > currentIndex) {
 			currentIndex += inputStream.skip(index - currentIndex);
 			if (currentIndex != index) {
 				throw new IOException("Not enough bytes were skipped.");
@@ -89,8 +88,7 @@ public class CountedByteProvider implements ByteProvider {
 	public byte[] readBytes(long index, long len) throws IOException {
 		if (index < currentIndex) {
 			throw new IOException("Attempted to read bytes that were already read.");
-		}
-		else if (index > currentIndex) {
+		} else if (index > currentIndex) {
 			currentIndex += inputStream.skip(index - currentIndex);
 			if (currentIndex != index) {
 				throw new IOException("Not enough bytes were skipped.");

@@ -7,8 +7,8 @@ public class CoverageTableRow {
 	protected CoverageFraction instructions;
 	protected long functionSize;
 
-
-	public CoverageTableRow (String name, long address, CoverageFraction blocks, CoverageFraction instructions, long functionSize) {
+	public CoverageTableRow(String name, long address, CoverageFraction blocks, CoverageFraction instructions,
+			long functionSize) {
 		this.name = name;
 		this.address = address;
 		this.blocks = blocks;

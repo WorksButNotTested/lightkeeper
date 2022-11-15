@@ -16,7 +16,7 @@ public class BinaryLineReader extends BinaryReader {
 	public String readLine() throws IOException {
 		var buffer = new StringBuilder();
 		while (true) {
-			var c = (char)readNextByte();
+			var c = (char) readNextByte();
 			if (isLineEnd(c)) {
 				break;
 			}

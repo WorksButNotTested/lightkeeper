@@ -39,7 +39,6 @@ public class BlockReader implements IEventListener {
 		listeners.forEach(l -> l.addException(exc));
 	}
 
-
 	public BlockEntry read() throws CancelledException, IOException {
 		monitor.checkCanceled();
 		var start = reader.readNextUnsignedInt();

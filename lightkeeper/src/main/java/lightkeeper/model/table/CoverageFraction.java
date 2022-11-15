@@ -13,7 +13,7 @@ public class CoverageFraction implements Comparable<CoverageFraction> {
 		if (denominator == 0) {
 			return 0;
 		}
-		return (double)(numerator) / denominator;
+		return (double) (numerator) / denominator;
 	}
 
 	@Override

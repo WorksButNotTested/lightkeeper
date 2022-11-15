@@ -12,8 +12,8 @@ import lightkeeper.model.ICoverageModelListener;
 public class CoverageTable extends AbstractSortedTableModel<CoverageTableRow> implements ICoverageModelListener {
 	protected CoverageTableModel model;
 
-	private String[] columnNames = { "Coverage %", "Address", "Blocks Hit", "Instructions Hit",
-			"Function Size", "Function Name" };
+	private String[] columnNames = { "Coverage %", "Address", "Blocks Hit", "Instructions Hit", "Function Size",
+			"Function Name" };
 
 	public CoverageTable(CoverageTableModel model) {
 		this.model = model;
@@ -52,7 +52,7 @@ public class CoverageTable extends AbstractSortedTableModel<CoverageTableRow> im
 	public Object getColumnValueForRow(CoverageTableRow row, int columnIndex) {
 		switch (columnIndex) {
 		case 0:
-			return row.getCoverage();	
+			return row.getCoverage();
 		case 1:
 			return String.format("0x%08x", row.getAddress());
 		case 2:
@@ -62,7 +62,7 @@ public class CoverageTable extends AbstractSortedTableModel<CoverageTableRow> im
 		case 4:
 			return row.getFunctionSize();
 		case 5:
-			return row.getName();			
+			return row.getName();
 		default:
 			throw new IndexOutOfBoundsException(String.format("Column index: %d out of range", columnIndex));
 		}

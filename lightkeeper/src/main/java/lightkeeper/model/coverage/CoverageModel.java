@@ -3,6 +3,7 @@ package lightkeeper.model.coverage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,7 +40,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 	}
 
 	@Override
-	public void load(DynamoRioFile file) {
+	public void load(DynamoRioFile file) throws IOException {
 		var selectedModules = getSelectedModules(file);
 		var ids = this.getSelectedModuleIds(selectedModules);
 		var blocks = file.getBlocks();
@@ -50,11 +51,37 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 		rows.add(row);
 	}
 
-	protected List<ModuleEntry> getSelectedModules(DynamoRioFile file) {
+	protected List<ModuleEntry> getSelectedModules(DynamoRioFile file) throws IOException {
 		var api = plugin.getApi();
 		var programFileName = api.getCurrentProgram().getName();
 		var selectedModules = file.getModules().stream()
-				.filter(m -> new File(m.getPath()).getName().equals(programFileName)).collect(Collectors.toList());
+				.filter(m -> new File(m.getPath()).getName().trim().equals(programFileName))
+				.collect(Collectors.toList());
+		if (selectedModules.isEmpty()) {
+			addMessage(String.format("Found %d modules", file.getModules().size()));
+			var names = file.getModules().stream().map(m -> new File(m.getPath()).getName().trim())
+					.collect(Collectors.toSet());
+			var sortedNames = new ArrayList<String>(names);
+			Collections.sort(sortedNames);
+			for (var n : sortedNames) {
+				addMessage(String.format("Found module name: '%s'", n));
+			}
+
+			String message = String.format(
+					"Failed to find module entry for '%s', The name must match exactly including any file extension.",
+					programFileName);
+
+			if (file.getModules().size() == 1) {
+				addMessage(message);
+				var name = new File(file.getModules().get(0).getPath()).getName().trim();
+				addMessage(String.format(
+						"Module list contains only a single entry '%s', so we're going to assume its right anyway.",
+						name));
+				return file.getModules();
+			}
+
+			throw new IOException(message);
+		}
 		return selectedModules;
 	}
 

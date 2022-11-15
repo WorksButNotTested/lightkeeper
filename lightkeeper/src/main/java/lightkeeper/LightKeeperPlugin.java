@@ -47,7 +47,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	protected FlatProgramAPI api;
 
 	public LightKeeperPlugin(PluginTool tool) {
-		super(tool, true, true);
+		super(tool);
 		coverageModel = new CoverageModel(this);
 		tableModel = new CoverageTableModel(this, coverageModel);
 		instructionModel = new CoverageInstructionModel(this, coverageModel);
