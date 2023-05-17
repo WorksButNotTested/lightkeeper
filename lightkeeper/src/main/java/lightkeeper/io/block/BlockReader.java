@@ -40,14 +40,14 @@ public class BlockReader implements IEventListener {
 	}
 
 	public BlockEntry read() throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		var start = reader.readNextUnsignedInt();
 		var size = reader.readNextUnsignedShort();
 		var module = reader.readNextUnsignedShort();
 
 		var block = new BlockEntry(start, size, module);
 		addMessage(String.format("Read Block: %s", block));
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		return block;
 	}
 }

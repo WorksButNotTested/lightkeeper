@@ -120,9 +120,9 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 
 				Set<Integer> ids = this.getSelectedModuleIds(selectedModules);
 
-				var baseAddress = api.getCurrentProgram().getAddressMap().getImageBase();
+				var baseAddress = api.getCurrentProgram().getImageBase();
 				for (BlockEntry block : file.getBlocks()) {
-					monitor.checkCanceled();
+					monitor.checkCancelled();
 					if (!ids.contains(block.getModule())) {
 						continue;
 					}

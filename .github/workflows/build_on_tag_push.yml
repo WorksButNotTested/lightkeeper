@@ -1,9 +1,9 @@
 name: Ghidra Extension Publish
 
 env:
-  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_10.2.1_build/ghidra_10.2.1_PUBLIC_20221110.zip
-  ghidra-zip-filename: ghidra_10.2.1_PUBLIC_20221110.zip
-  ghidra-directory: ghidra_10.2.1_PUBLIC
+  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_10.3_build/ghidra_10.3_PUBLIC_20230510.zip
+  ghidra-zip-filename: ghidra_10.3_PUBLIC_20230510.zip
+  ghidra-directory: ghidra_10.3_PUBLIC
 
 on:
   push:
@@ -16,6 +16,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
 
     - name: Get the version
       id: get_version
@@ -33,14 +38,11 @@ jobs:
     - name: Build
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y openjdk-17-jdk-headless
-        sudo update-java-alternatives -s java-1.17.0-openjdk-amd64
         unzip -qq ${{ steps.download-ghidra.outputs.file-path }} -d /opt
         rm -v ${{ env.ghidra-zip-filename }}
         cd lightkeeper
         java --version
-        gradle -Dorg.gradle.java.home=/usr/lib/jvm/java-1.17.0-openjdk-amd64 -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
+        gradle -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
         mv -v dist/*.zip ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
 
     - name: Create Release

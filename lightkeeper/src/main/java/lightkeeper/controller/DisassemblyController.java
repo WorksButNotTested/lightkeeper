@@ -3,6 +3,7 @@ package lightkeeper.controller;
 import java.awt.Color;
 import java.math.BigInteger;
 
+import docking.widgets.fieldpanel.LayoutModel;
 import docking.widgets.fieldpanel.listener.IndexMapper;
 import docking.widgets.fieldpanel.listener.LayoutModelListener;
 import ghidra.app.decompiler.ClangLine;
@@ -37,7 +38,7 @@ public class DisassemblyController implements ICoverageModelListener {
 			DecompilerActionContext context = (DecompilerActionContext) dprov.getActionContext(null);
 			if (context != null) {
 				DecompilerPanel dpanel = context.getDecompilerPanel();
-				var controller = dpanel.getLayoutModel();
+				LayoutModel controller = dpanel.getFieldPanel().getLayoutModel();
 				controller.addLayoutModelListener(new LayoutModelListener() {
 
 					@Override
@@ -65,13 +66,13 @@ public class DisassemblyController implements ICoverageModelListener {
 
 		for (ClangLine line : dpanel.getLines()) {
 			for (ClangToken token : line.getAllTokens()) {
-				monitor.checkCanceled();
+				monitor.checkCancelled();
 				var address = DecompilerUtils.getClosestAddress(program, token);
 				if (address == null) {
 					continue;
 				}
 				for (AddressRange range : model.getModelData()) {
-					monitor.checkCanceled();
+					monitor.checkCancelled();
 					if (!range.contains(address)) {
 						continue;
 					}

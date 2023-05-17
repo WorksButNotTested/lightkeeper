@@ -74,18 +74,18 @@ public class DynamoRioFile implements IEventListener {
 	}
 
 	private void readHeader(TaskMonitor monitor) throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Reading header");
 		var headerLine = reader.readLine();
 		addMessage(headerLine);
 		if (!headerLine.equals(HEADER)) {
 			throw new IOException(String.format("Invalid header: '%s' expected '%s'", headerLine, HEADER));
 		}
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 	}
 
 	private void readFlavour(TaskMonitor monitor) throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Reading flavour");
 		var flavourLine = reader.readLine();
 		addMessage(flavourLine);
@@ -95,11 +95,11 @@ public class DynamoRioFile implements IEventListener {
 		}
 		flavour = flavourMatcher.group("flavour");
 		addMessage(String.format("Detected flavour: %s", flavour));
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 	}
 
 	private void readTable(TaskMonitor monitor) throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Reading table");
 		var tableLine = reader.readLine();
 		addMessage(tableLine);
@@ -120,14 +120,14 @@ public class DynamoRioFile implements IEventListener {
 		var count = tableMatcher.group("count");
 		tableCount = Integer.parseInt(count);
 		addMessage(String.format("Detected table count: %d", tableCount));
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 	}
 
 	private void readModules(TaskMonitor monitor) throws CancelledException, IOException {
 		var moduleReader = new ModuleReader(monitor, reader, tableVersion);
 		moduleReader.addListener(this);
 		for (var i = 0; i < tableCount; i++) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			monitor.setMessage(String.format("Reading module: %d", i));
 			var module = moduleReader.read();
 			modules.add(module);
@@ -135,7 +135,7 @@ public class DynamoRioFile implements IEventListener {
 	}
 
 	private void readBbHeader(TaskMonitor monitor) throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Reading BB header");
 		var bbHeaderLine = reader.readLine();
 		addMessage(bbHeaderLine);
@@ -147,7 +147,7 @@ public class DynamoRioFile implements IEventListener {
 		var blockString = bbHeaderMatcher.group("blocks");
 		blockCount = Integer.parseInt(blockString);
 		addMessage(String.format("Detected: %d blocks", blockCount));
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 	}
 
 	private void readBlocks(TaskMonitor monitor) throws CancelledException, IOException {
@@ -157,7 +157,7 @@ public class DynamoRioFile implements IEventListener {
 		var moduleLimits = getModuleLimits();
 
 		for (var i = 0; i < blockCount; i++) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			monitor.setMessage(String.format("Reading block: %d", i));
 			var block = blockReader.read();
 			long moduleLimit = moduleLimits.get(block.getModule());
@@ -167,7 +167,7 @@ public class DynamoRioFile implements IEventListener {
 			blocks.add(block);
 		}
 
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 
 		if (provider.getLength() != provider.getPosition()) {
 			throw new IOException(String.format("File has: %d unexpected trailing bytes at position: %d",

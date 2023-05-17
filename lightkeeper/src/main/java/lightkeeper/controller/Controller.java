@@ -72,7 +72,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		try {
 			colorService.clearAllBackgroundColors();
 			for (AddressRange range : instructionModel.getModelData()) {
-				monitor.checkCanceled();
+				monitor.checkCancelled();
 				var min = range.getMinAddress();
 				var max = range.getMaxAddress();
 				colorService.setBackgroundColor(min, max, Color.GREEN);
@@ -120,7 +120,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	}
 
 	public void importCoverage(TaskMonitor monitor, List<File> files) throws CancelledException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		try {
 			for (File file : files) {
 				monitor.setMessage(String.format("Importing: %s", file.getAbsolutePath()));
@@ -145,7 +145,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	}
 
 	public void clearCoverage(TaskMonitor monitor) throws CancelledException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Clearing");
 		addMessage("Clearing");
 		monitor.setProgress(0);
@@ -156,7 +156,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 
 	public void refreshCoverage(TaskMonitor monitor) throws CancelledException {
 		try {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			monitor.setMessage("Refreshing");
 			addMessage("Refreshing");
 			monitor.setProgress(0);

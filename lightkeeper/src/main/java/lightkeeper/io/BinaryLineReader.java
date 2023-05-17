@@ -6,11 +6,11 @@ import ghidra.app.util.bin.BinaryReader;
 
 public class BinaryLineReader extends BinaryReader {
 
-	protected CountedByteProvider provider;
+	protected CountedByteProvider countedProvider;
 
 	public BinaryLineReader(CountedByteProvider provider) {
 		super(provider, true);
-		this.provider = provider;
+		this.countedProvider = provider;
 	}
 
 	public String readLine() throws IOException {
@@ -22,7 +22,7 @@ public class BinaryLineReader extends BinaryReader {
 			}
 
 			if (!isPrintable(c)) {
-				throw new IOException(String.format("Invalid character at position: %d", provider.getPosition()));
+				throw new IOException(String.format("Invalid character at position: %d", countedProvider.getPosition()));
 			}
 
 			buffer.append(c);

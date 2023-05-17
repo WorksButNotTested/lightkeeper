@@ -39,13 +39,13 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 			return;
 		}
 
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 
 		processRanges(monitor);
 
 		monitor.setMessage("Processing complete");
 		addMessage("Processing complete");
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		notifyUpdate(monitor);
 	}
 
@@ -55,7 +55,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 		Set<AddressRange> unassigned = new HashSet<>();
 		var api = plugin.getApi();
 		for (var i = 0; i < modelRanges.size(); i++) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			monitor.setMessage(String.format("Processing block %d / %d", i, modelRanges.size()));
 			var range = modelRanges.get(i);
 
@@ -85,7 +85,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 		var i = 0;
 		while (functionIterator.hasNext()) {
 			i++;
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			var function = functionIterator.next();
 			monitor.setMessage(
 					String.format("Processing function (%s) %d / %d", function.getName(), i, functions.size()));
@@ -113,7 +113,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 		var codeBlocks = 0;
 		var hitCodeBlocks = 0;
 		while (codeBlockIterator.hasNext()) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			codeBlocks++;
 
 			monitor.setMessage(String.format("Processing function blocks (%s) %d", function.getName(), codeBlocks));
@@ -123,7 +123,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 
 			var rangeIterator = ranges.iterator();
 			while (rangeIterator.hasNext()) {
-				monitor.checkCanceled();
+				monitor.checkCancelled();
 
 				var range = rangeIterator.next();
 				if (range.getMinAddress().compareTo(cb.getMinAddress()) < 0) {
@@ -150,7 +150,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 		var instructions = 0;
 		var hitInstructions = 0;
 		while (instructionIterator.hasNext()) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			instructions++;
 			monitor.setMessage(
 					String.format("Processing function instructions (%s) %d", function.getName(), instructions));
@@ -159,7 +159,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 			var instruction = instructionIterator.next();
 			var rangeIterator = ranges.iterator();
 			while (rangeIterator.hasNext()) {
-				monitor.checkCanceled();
+				monitor.checkCancelled();
 				var range = rangeIterator.next();
 
 				if (instruction.getMinAddress().compareTo(range.getMinAddress()) < 0) {
@@ -182,7 +182,7 @@ public class CoverageTableModel extends AbstractCoverageModel<Set<AddressRange>,
 		var i = 0;
 		while (iterator.hasNext()) {
 			i++;
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			monitor.setMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
 			addMessage(String.format("Processing unassigned block %d / %d", i, unassigned.size()));
 			var range = iterator.next();

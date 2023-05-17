@@ -97,14 +97,14 @@ public class ModuleReader {
 	}
 
 	private void readColumnHeader() throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		monitor.setMessage("Reading Column Header");
 		columnHeader = reader.readLine();
 		addMessage(columnHeader);
 	}
 
 	public ModuleEntry read() throws CancelledException, IOException {
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		var moduleLine = reader.readLine();
 		addMessage(moduleLine);
 
@@ -150,7 +150,7 @@ public class ModuleReader {
 
 		var module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
 		addMessage(String.format("Read Module: %s", module));
-		monitor.checkCanceled();
+		monitor.checkCancelled();
 		return module;
 	}
 

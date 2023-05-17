@@ -39,7 +39,7 @@ public class CoverageInstructionModel extends AbstractCoverageModel<Set<AddressR
 		var listing = api.getCurrentProgram().getListing();
 
 		for (AddressRange range : modelRanges) {
-			monitor.checkCanceled();
+			monitor.checkCancelled();
 			var iterator = listing.getInstructions(range.getMinAddress(), true);
 			while (iterator.hasNext()) {
 				var instruction = iterator.next();
