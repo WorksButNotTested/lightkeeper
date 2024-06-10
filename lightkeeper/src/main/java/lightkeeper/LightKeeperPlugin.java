@@ -33,7 +33,7 @@ import lightkeeper.model.table.CoverageTableModel;
 import lightkeeper.view.LightKeeperProvider;
 
 //@formatter:off
-@PluginInfo(status = PluginStatus.STABLE, packageName = CorePluginPackage.NAME, category = PluginCategoryNames.MISC, shortDescription = "Plugin for visualization of DynamoRio coverage data.", description = "Plugin for visualization of DynamoRio coverage data.")
+@PluginInfo(status = PluginStatus.STABLE, packageName = CorePluginPackage.NAME, category = PluginCategoryNames.NAVIGATION, shortDescription = "Plugin for visualization of DynamoRio coverage data.", description = "Plugin for visualization of DynamoRio coverage data.")
 //@formatter:on
 public class LightKeeperPlugin extends ProgramPlugin {
 	protected CoverageModel coverageModel;
