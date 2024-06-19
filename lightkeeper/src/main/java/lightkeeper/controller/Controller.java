@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import generic.theme.GColor;
 import ghidra.app.plugin.core.colorizer.ColorizingService;
 import ghidra.app.services.CodeViewerService;
 import ghidra.app.services.ConsoleService;
@@ -28,6 +29,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 	protected CoverageModel model;
 	protected CoverageTableModel tableModel;
 	protected CoverageInstructionModel instructionModel;
+	protected GColor color;
 
 	public Controller(LightKeeperPlugin plugin, CoverageModel model, CoverageTableModel tableModel,
 			CoverageInstructionModel instructionModel) {
@@ -35,6 +37,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 		this.model = model;
 		this.tableModel = tableModel;
 		this.instructionModel = instructionModel;
+		this.color = new GColor("color.lightkeeper.instruction_highlight");
 	}
 
 	public void goTo(CoverageTableRow row) {
@@ -75,7 +78,7 @@ public class Controller implements IEventListener, ICoverageModelListener {
 				monitor.checkCancelled();
 				var min = range.getMinAddress();
 				var max = range.getMaxAddress();
-				colorService.setBackgroundColor(min, max, Color.GREEN);
+				colorService.setBackgroundColor(min, max, this.color);
 			}
 			completed = true;
 		} finally {
