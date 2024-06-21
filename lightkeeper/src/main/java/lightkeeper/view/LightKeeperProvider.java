@@ -39,6 +39,7 @@ import docking.widgets.table.GTableCellRenderingData;
 import docking.widgets.table.TableSortState;
 import docking.widgets.table.TableSortStateEditor;
 import docking.widgets.table.ColumnSortState.SortDirection;
+import generic.theme.GColor;
 import ghidra.util.Msg;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
@@ -125,6 +126,19 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 				return component;
 			}
 		});
+
+		final var colors = new GColor[] {
+			new GColor("color.lightkeeper.coverage_lt_20.bg"),
+			new GColor("color.lightkeeper.coverage_lt_20.fg"),
+			new GColor("color.lightkeeper.coverage_lt_40.bg"),
+			new GColor("color.lightkeeper.coverage_lt_40.fg"),
+			new GColor("color.lightkeeper.coverage_lt_60.bg"),
+			new GColor("color.lightkeeper.coverage_lt_60.fg"),
+			new GColor("color.lightkeeper.coverage_lt_80.bg"),
+			new GColor("color.lightkeeper.coverage_lt_80.fg"),
+			new GColor("color.lightkeeper.coverage_default.bg"),
+			new GColor("color.lightkeeper.coverage_default.fg")
+		};
 		tableView.getColumnModel().getColumn(0).setCellRenderer(new GTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(GTableCellRenderingData data) {
@@ -149,20 +163,20 @@ public class LightKeeperProvider extends ComponentProvider implements TableModel
 
 			private void setPercentageBackgroundColor(Component component, double coverage) {
 				if (coverage < 0.20d) {
-					component.setBackground(Color.BLUE);
-					component.setForeground(Color.WHITE);
+					component.setBackground(colors[0]);
+					component.setForeground(colors[1]);
 				} else if (coverage < 0.40d) {
-					component.setBackground(Color.GREEN);
-					component.setForeground(Color.BLACK);
+					component.setBackground(colors[2]);
+					component.setForeground(colors[3]);
 				} else if (coverage < 0.60d) {
-					component.setBackground(Color.YELLOW);
-					component.setForeground(Color.BLACK);
+					component.setBackground(colors[4]);
+					component.setForeground(colors[5]);
 				} else if (coverage < 0.80d) {
-					component.setBackground(Color.ORANGE);
-					component.setForeground(Color.BLACK);
+					component.setBackground(colors[6]);
+					component.setForeground(colors[7]);
 				} else {
-					component.setBackground(Color.RED);
-					component.setForeground(Color.WHITE);
+					component.setBackground(colors[8]);
+					component.setForeground(colors[9]);
 				}
 			}
 		});

@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import docking.widgets.fieldpanel.LayoutModel;
 import docking.widgets.fieldpanel.listener.IndexMapper;
 import docking.widgets.fieldpanel.listener.LayoutModelListener;
+import generic.theme.GColor;
 import ghidra.app.decompiler.ClangLine;
 import ghidra.app.decompiler.ClangToken;
 import ghidra.app.decompiler.component.DecompilerPanel;
@@ -24,10 +25,12 @@ import lightkeeper.model.instruction.CoverageInstructionModel;
 public class DisassemblyController implements ICoverageModelListener {
 	protected LightKeeperPlugin plugin;
 	protected CoverageInstructionModel model;
+	protected GColor color;
 
 	public DisassemblyController(LightKeeperPlugin plugin, CoverageInstructionModel model) {
 		this.plugin = plugin;
 		this.model = model;
+		this.color = new GColor("color.lightkeeper.disassembly_highlight");
 	}
 
 	@Override
@@ -77,7 +80,7 @@ public class DisassemblyController implements ICoverageModelListener {
 						continue;
 					}
 
-					token.setHighlight(Color.GREEN);
+					token.setHighlight(this.color);
 				}
 			}
 		}
