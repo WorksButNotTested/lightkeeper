@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import ghidra.program.model.address.AddressOverflowException;
 import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressRangeImpl;
+import ghidra.program.model.address.AddressSet;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
@@ -22,10 +23,10 @@ import lightkeeper.io.file.DynamoRioFile;
 import lightkeeper.io.module.ModuleEntry;
 import lightkeeper.model.AbstractCoverageModel;
 
-public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<AddressRange>> {
+public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, AddressSet> {
 	protected List<CoverageListRow> rows = new ArrayList<>();
 	protected Map<DynamoRioFile, HashSet<AddressRange>> map = new HashMap<>();
-	protected Set<AddressRange> ranges = new HashSet<>();
+	protected AddressSet ranges = new AddressSet();
 
 	public CoverageModel(LightKeeperPlugin plugin) {
 		super(plugin);
@@ -35,7 +36,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 	public void clear(TaskMonitor monitor) throws CancelledException {
 		rows = new ArrayList<>();
 		map = new HashMap<>();
-		ranges = new HashSet<>();
+		ranges = new AddressSet();
 		notifyUpdate(monitor);
 	}
 
@@ -93,7 +94,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 	@Override
 	public void update(TaskMonitor monitor) throws CancelledException, IOException {
 		try {
-			ranges = new HashSet<>();
+			ranges = new AddressSet();
 			for (CoverageListRow row : rows) {
 				var state = row.getState();
 				if (state == CoverageListState.IGNORED) {
@@ -140,7 +141,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 					.map(r -> map.get(r.file)).flatMap(HashSet::stream).collect(Collectors.toSet());
 
 			added.removeAll(subtracted);
-			ranges = added;
+			added.stream().forEach(r -> ranges.add(r));
 
 			notifyUpdate(monitor);
 		} catch (AddressOverflowException e) {
@@ -153,7 +154,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, Set<Addr
 	}
 
 	@Override
-	public Set<AddressRange> getModelData() {
+	public AddressSet getModelData() {
 		return ranges;
 	}
 }

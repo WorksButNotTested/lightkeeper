@@ -1,10 +1,7 @@
 package lightkeeper.model.instruction;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.address.AddressRangeImpl;
+import ghidra.program.model.address.AddressSet;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.TaskMonitor;
 import lightkeeper.LightKeeperPlugin;
@@ -12,11 +9,11 @@ import lightkeeper.model.AbstractCoverageModel;
 import lightkeeper.model.ICoverageModelListener;
 import lightkeeper.model.coverage.CoverageModel;
 
-public class CoverageInstructionModel extends AbstractCoverageModel<Set<AddressRange>, Set<AddressRange>>
+public class CoverageInstructionModel extends AbstractCoverageModel<AddressSet, AddressSet>
 		implements ICoverageModelListener {
 	protected CoverageModel coverage;
-	protected Set<AddressRange> modelRanges;
-	protected Set<AddressRange> hits = new HashSet<>();
+	protected AddressSet modelRanges;
+	protected AddressSet hits = new AddressSet();
 
 	public CoverageInstructionModel(LightKeeperPlugin plugin, CoverageModel coverage) {
 		super(plugin);
@@ -24,52 +21,31 @@ public class CoverageInstructionModel extends AbstractCoverageModel<Set<AddressR
 	}
 
 	@Override
-	public void load(Set<AddressRange> ranges) {
+	public void load(AddressSet ranges) {
 		modelRanges = ranges;
 	}
 
 	@Override
 	public void update(TaskMonitor monitor) throws CancelledException {
-		hits = new HashSet<>();
+		hits = new AddressSet();
 		if (modelRanges == null) {
 			return;
 		}
 
-		var api = plugin.getApi();
-		var listing = api.getCurrentProgram().getListing();
-
-		for (AddressRange range : modelRanges) {
-			monitor.checkCancelled();
-			var iterator = listing.getInstructions(range.getMinAddress(), true);
-			while (iterator.hasNext()) {
-				var instruction = iterator.next();
-
-				if (instruction.getMaxAddress().compareTo(range.getMaxAddress()) > 0) {
-					break;
-				}
-
-				var instructionStart = instruction.getAddress();
-				long length = instruction.getLength();
-				if (length > 0) {
-					length--;
-				}
-				var instructionEnd = instructionStart.add(length);
-				AddressRange instructionRange = new AddressRangeImpl(instructionStart, instructionEnd);
-				hits.add(instructionRange);
-			}
-		}
+		var instructions = plugin.getApi().getCurrentProgram().getListing().getInstructions(modelRanges, true);
+		instructions.forEach(i -> hits.add(new AddressRangeImpl(i.getMinAddress(), i.getMaxAddress())));
 		notifyUpdate(monitor);
 	}
 
 	@Override
 	public void clear(TaskMonitor monitor) throws CancelledException {
 		modelRanges = null;
-		hits = new HashSet<>();
+		hits = new AddressSet();
 		notifyUpdate(monitor);
 	}
 
 	@Override
-	public Set<AddressRange> getModelData() {
+	public AddressSet getModelData() {
 		return hits;
 	}
 

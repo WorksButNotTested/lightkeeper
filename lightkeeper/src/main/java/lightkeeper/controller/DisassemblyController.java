@@ -1,19 +1,17 @@
 package lightkeeper.controller;
 
-import java.awt.Color;
 import java.math.BigInteger;
+import java.util.Collection;
 
 import docking.widgets.fieldpanel.LayoutModel;
 import docking.widgets.fieldpanel.listener.IndexMapper;
 import docking.widgets.fieldpanel.listener.LayoutModelListener;
 import generic.theme.GColor;
-import ghidra.app.decompiler.ClangLine;
 import ghidra.app.decompiler.ClangToken;
 import ghidra.app.decompiler.component.DecompilerPanel;
 import ghidra.app.decompiler.component.DecompilerUtils;
 import ghidra.app.plugin.core.decompile.DecompilerActionContext;
 import ghidra.app.plugin.core.decompile.DecompilerProvider;
-import ghidra.program.model.address.AddressRange;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
@@ -59,31 +57,9 @@ public class DisassemblyController implements ICoverageModelListener {
 		}
 	}
 
-	public void updateCoverage(TaskMonitor monitor, DecompilerPanel dpanel) throws CancelledException {
-		var api = plugin.getApi();
-		if (api == null) {
-			return;
-		}
-
-		var program = api.getCurrentProgram();
-
-		for (ClangLine line : dpanel.getLines()) {
-			for (ClangToken token : line.getAllTokens()) {
-				monitor.checkCancelled();
-				var address = DecompilerUtils.getClosestAddress(program, token);
-				if (address == null) {
-					continue;
-				}
-				for (AddressRange range : model.getModelData()) {
-					monitor.checkCancelled();
-					if (!range.contains(address)) {
-						continue;
-					}
-
-					token.setHighlight(this.color);
-				}
-			}
-		}
+	public void updateCoverage(TaskMonitor monitor, DecompilerPanel dpanel) {
+		Collection<ClangToken> tokens = DecompilerUtils.getTokens(dpanel.getLayoutController().getRoot(), model.getModelData());
+		tokens.stream().forEach(t -> t.setHighlight(this.color));
 	}
 
 	public void updateCoverageTask(DecompilerPanel dpanel) {
