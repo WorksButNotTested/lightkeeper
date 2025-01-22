@@ -124,11 +124,11 @@ public class ModuleReader {
 		}
 
 		var startString = moduleMatcher.group("start");
-		long start = parseNumber(startString, s -> Long.parseLong(s, 16),
+		long start = parseNumber(startString, s -> Long.parseUnsignedLong(s, 16),
 				String.format("Invalid start: %s", startString));
 
 		var endString = moduleMatcher.group("end");
-		long end = parseNumber(endString, s -> Long.parseLong(s, 16), String.format("Invalid start: %s", endString));
+		long end = parseNumber(endString, s -> Long.parseUnsignedLong(s, 16), String.format("Invalid end: %s", endString));
 
 		var entryString = moduleMatcher.group("entry");
 		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16),
@@ -147,6 +147,10 @@ public class ModuleReader {
 		}
 
 		var pathString = moduleMatcher.group("path");
+		if (pathString.startsWith("\"") && pathString.endsWith("\"")) {
+			pathString = pathString.substring(1, pathString.length() - 1);
+		}
+
 
 		var module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
 		addMessage(String.format("Read Module: %s", module));
