@@ -1,9 +1,9 @@
 name: Ghidra Extension Publish
 
 env:
-  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.1.1_build/ghidra_11.1.1_PUBLIC_20240614.zip
-  ghidra-zip-filename: ghidra_11.1.1_PUBLIC_20240614.zip
-  ghidra-directory: ghidra_11.1.1_PUBLIC
+  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.2.1_build/ghidra_11.2.1_PUBLIC_20241105.zip
+  ghidra-zip-filename: ghidra_11.2.1_PUBLIC_20241105.zip
+  ghidra-directory: ghidra_11.2.1_PUBLIC
 
 on:
   push:
@@ -12,14 +12,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '21'
         cache: 'gradle'
 
     - name: Get the version

@@ -4,7 +4,7 @@
         {
           "label": "Build",
           "type": "shell",
-          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.1.1_PUBLIC",
+          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.2.1_PUBLIC",
           "group": "build",
           "options": {
               "cwd": "${workspaceFolder}/lightkeeper"
@@ -18,7 +18,7 @@
       {
           "label": "Build Image",
           "type": "shell",
-          "command": "docker buildx build --build-arg VSCODE_COMMIT_ID=$(code --version |sed -n '2p') -f .devcontainer/Dockerfile -t lightkeeper --target lightkeeper ${workspaceFolder}",
+          "command": "docker buildx build -f .devcontainer/Dockerfile -t lightkeeper --target lightkeeper ${workspaceFolder}",
           "group": "build",
           "options": {
               "cwd": "${workspaceFolder}"
