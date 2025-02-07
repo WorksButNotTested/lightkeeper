@@ -19,9 +19,9 @@ RUN apt-get update && \
     git
 
 # GHIDRA
-ENV GHIDRA_URL=https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.2.1_build/ghidra_11.2.1_PUBLIC_20241105.zip
-ENV GHIDRA_ZIP=ghidra_11.2.1_PUBLIC_20241105.zip
-ENV GHIDRA_DIR=ghidra_11.2.1_PUBLIC
+ENV GHIDRA_URL=https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.3_build/ghidra_11.3_PUBLIC_20250205.zip
+ENV GHIDRA_ZIP=ghidra_11.3_PUBLIC_20250205.zip
+ENV GHIDRA_DIR=ghidra_11.3_PUBLIC
 RUN wget $GHIDRA_URL
 RUN unzip -d /opt $GHIDRA_ZIP
 

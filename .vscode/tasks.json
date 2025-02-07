@@ -4,7 +4,7 @@
         {
           "label": "Build",
           "type": "shell",
-          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.2.1_PUBLIC",
+          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.3_PUBLIC",
           "group": "build",
           "options": {
               "cwd": "${workspaceFolder}/lightkeeper"
@@ -14,51 +14,6 @@
               "reveal": "always",
               "focus": true,
           }
-      },
-      {
-          "label": "Build Image",
-          "type": "shell",
-          "command": "docker buildx build -f .devcontainer/Dockerfile -t lightkeeper --target lightkeeper ${workspaceFolder}",
-          "group": "build",
-          "options": {
-              "cwd": "${workspaceFolder}"
-          },
-          "presentation": {
-              "clear": false,
-              "reveal": "always",
-              "focus": true,
-          }
-      },
-      {
-        "label": "Run Image",
-        "type": "shell",
-        "command": "docker run -ti --rm --name lightkeeper -v ~:/home/share lightkeeper /bin/bash",
-        "group": "build",
-        "options": {
-            "cwd": "${workspaceFolder}"
-        },
-        "presentation": {
-            "clear": false,
-            "reveal": "always",
-            "focus": true,
-        }
-    },
-      {
-          "label": "Export Image",
-          "type": "shell",
-          "command": "docker save -o ${workspaceFolder}/lightkeeper.tar lightkeeper",
-          "group": "build",
-          "options": {
-              "cwd": "${workspaceFolder}"
-          },
-          "presentation": {
-              "clear": false,
-              "reveal": "always",
-              "focus": true,
-          },
-          "dependsOn": [
-              "Build Image"
-          ]
       },
   ]
 }

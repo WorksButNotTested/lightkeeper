@@ -1,6 +1,6 @@
 {
-  "name": "Local",
-  "image": "lightkeeper",
+  "name": "lightkeeper",
+  "dockerFile": "Dockerfile",
   "customizations": {
     "vscode": {
       "extensions": [
