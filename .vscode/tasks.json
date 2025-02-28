@@ -4,7 +4,7 @@
         {
           "label": "Build",
           "type": "shell",
-          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.3_PUBLIC",
+          "command": "gradle -PGHIDRA_INSTALL_DIR=/opt/ghidra_11.3.1_PUBLIC",
           "group": "build",
           "options": {
               "cwd": "${workspaceFolder}/lightkeeper"
