@@ -1,9 +1,9 @@
 name: Ghidra Extension Publish
 
 env:
-  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.0.4_build/ghidra_12.0.4_PUBLIC_20260303.zip
-  ghidra-zip-filename: ghidra_12.0.4_PUBLIC_20260303.zip
-  ghidra-directory: ghidra_12.0.4_PUBLIC
+  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.2_build/ghidra_12.1.2_PUBLIC_20260605.zip
+  ghidra-zip-filename: ghidra_12.1.2_PUBLIC_20260605.zip
+  ghidra-directory: ghidra_12.1.2_PUBLIC
 
 on:
   push:
