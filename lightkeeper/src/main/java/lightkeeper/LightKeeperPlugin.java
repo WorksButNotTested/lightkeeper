@@ -24,7 +24,7 @@ import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.listing.Program;
 import lightkeeper.controller.Controller;
-import lightkeeper.controller.DisassemblyController;
+import lightkeeper.controller.DecompilationController;
 import lightkeeper.model.coverage.CoverageModel;
 import lightkeeper.model.instruction.CoverageInstructionModel;
 import lightkeeper.model.list.CoverageList;
@@ -42,7 +42,7 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	protected CoverageTable coverageTable;
 	protected CoverageList coverageList;
 	protected Controller controller;
-	protected DisassemblyController disassemblyController;
+	protected DecompilationController decompilationController;
 	protected LightKeeperProvider provider;
 	protected Program program;
 	protected FlatProgramAPI api;
@@ -55,12 +55,12 @@ public class LightKeeperPlugin extends ProgramPlugin {
 		coverageTable = new CoverageTable(tableModel);
 		coverageList = new CoverageList(coverageModel);
 		controller = new Controller(this, coverageModel, tableModel, instructionModel);
-		disassemblyController = new DisassemblyController(this, instructionModel);
+		decompilationController = new DecompilationController(this, instructionModel);
 
 		coverageModel.addModelListener(tableModel);
 		coverageModel.addModelListener(instructionModel);
 		instructionModel.addModelListener(controller);
-		instructionModel.addModelListener(disassemblyController);
+		instructionModel.addModelListener(decompilationController);
 		tableModel.addModelListener(coverageTable);
 		coverageModel.addModelListener(coverageList);
 
@@ -74,6 +74,12 @@ public class LightKeeperPlugin extends ProgramPlugin {
 	@Override
 	public void init() {
 		super.init();
+	}
+
+	@Override
+	protected void dispose() {
+		decompilationController.dispose();
+		super.dispose();
 	}
 
 	@Override
