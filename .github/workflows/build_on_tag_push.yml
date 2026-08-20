@@ -1,71 +1,131 @@
 name: Ghidra Extension Publish
 
-env:
-  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.2_build/ghidra_12.1.2_PUBLIC_20260605.zip
-  ghidra-zip-filename: ghidra_12.1.2_PUBLIC_20260605.zip
-  ghidra-directory: ghidra_12.1.2_PUBLIC
-
 on:
   push:
     tags:
       - '*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v3
+    - uses: actions/checkout@v7
       with:
-        distribution: 'temurin'
-        java-version: '21'
-        cache: 'gradle'
+        # The change log is built from the history back to the previous tag.
+        fetch-depth: 0
 
-    - name: Get the version
-      id: get_version
+    - name: Resolve the latest Ghidra release
+      id: ghidra
+      shell: bash
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-        echo ::set-output name=CHANGE_LOG::$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
+        set -euo pipefail
+
+        release=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+          https://api.github.com/repos/NationalSecurityAgency/ghidra/releases/latest)
+
+        # e.g. https://github.com/.../download/Ghidra_12.1.3_build/ghidra_12.1.3_PUBLIC_20260817.zip
+        url=$(jq -r '.assets[].browser_download_url
+                     | select(test("/ghidra_.*_PUBLIC_[0-9]+\\.zip$"))' <<<"${release}" | head -1)
+
+        if [ -z "${url}" ]; then
+          echo "::error::No Ghidra distribution found in the latest release:"
+          jq -r '.assets[].name' <<<"${release}"
+          exit 1
+        fi
+
+        zip=${url##*/}
+        # ghidra_12.1.3_PUBLIC_20260817.zip unpacks to the directory ghidra_12.1.3_PUBLIC
+        base=${zip%.zip}
+        dir=${base%_*}
+        version=$(sed -E 's/^ghidra_([0-9.]+)_PUBLIC.*/\1/' <<<"${zip}")
+
+        {
+          echo "url=${url}"
+          echo "zip=${zip}"
+          echo "dir=${dir}"
+          echo "version=${version}"
+        } >> "${GITHUB_OUTPUT}"
+
+        echo "Building against Ghidra ${version} (${zip})"
 
     - name: Download Ghidra release
-      uses: carlosperate/download-file-action@v1.0.3
-      id: download-ghidra
+      shell: bash
+      run: |
+        set -euo pipefail
+        curl -fsSL -o "${{ steps.ghidra.outputs.zip }}" "${{ steps.ghidra.outputs.url }}"
+        unzip -qq "${{ steps.ghidra.outputs.zip }}" -d /opt
+        rm -v "${{ steps.ghidra.outputs.zip }}"
+
+    - name: Get the required Java version
+      id: get_java
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        properties=/opt/${{ steps.ghidra.outputs.dir }}/Ghidra/application.properties
+        version=$(sed -n 's/^application\.java\.compiler=//p' "${properties}")
+        [ -n "${version}" ] || version=$(sed -n 's/^application\.java\.min=//p' "${properties}")
+        [ -n "${version}" ] || version=21
+
+        echo "version=${version}" >> "${GITHUB_OUTPUT}"
+        echo "Ghidra ${{ steps.ghidra.outputs.version }} builds with Java ${version}"
+
+    - uses: actions/setup-java@v5
       with:
-        file-url: ${{ env.ghidra-url }}
-        file-name: ${{ env.ghidra-zip-filename }}
+        distribution: 'temurin'
+        java-version: ${{ steps.get_java.outputs.version }}
+        cache: 'gradle'
 
     - name: Build
       shell: bash
+      env:
+        TAG: ${{ github.ref_name }}
       run: |
-        unzip -qq ${{ steps.download-ghidra.outputs.file-path }} -d /opt
-        rm -v ${{ env.ghidra-zip-filename }}
+        set -euo pipefail
         cd lightkeeper
         java --version
-        gradle -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
-        mv -v dist/*.zip ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+        gradle -PGHIDRA_INSTALL_DIR=/opt/${{ steps.ghidra.outputs.dir }}
+        mv -v dist/*.zip "${GITHUB_WORKSPACE}/lightkeeper-${TAG}.zip"
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+    - name: Write the release notes
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          Change log:
-          ${{ steps.get_version.outputs.CHANGE_LOG }}
-        draft: false
-        prerelease: false
+        TAG: ${{ github.ref_name }}
+        GHIDRA_VERSION: ${{ steps.ghidra.outputs.version }}
+      run: |
+        set -euo pipefail
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
+        previous=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+        if [ -n "${previous}" ]; then
+          range="${previous}..${TAG}"
+        else
+          range="${TAG}"
+        fi
+
+        {
+          echo "Built against Ghidra ${GHIDRA_VERSION}."
+          echo
+          echo "Change log:"
+          git log --pretty=format:'* %s' "${range}"
+          echo
+        } > "${GITHUB_WORKSPACE}/release-notes.md"
+
+        cat "${GITHUB_WORKSPACE}/release-notes.md"
+
+    - name: Publish the release
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
-        asset_name: lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
-        asset_content_type: application/zip
+        TAG: ${{ github.ref_name }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        gh release create "${TAG}" \
+          --title "Release ${TAG}" \
+          --notes-file "${GITHUB_WORKSPACE}/release-notes.md" \
+          "${GITHUB_WORKSPACE}/lightkeeper-${TAG}.zip"
