@@ -20,6 +20,14 @@ import lightkeeper.io.module.ModuleEntry;
 import lightkeeper.io.module.ModuleReader;
 
 public class DynamoRioFile implements IEventListener {
+	/**
+	 * From version 3 of the file format, block offsets are relative to the start of
+	 * the module table entry (segment) which contains them, rather than the base
+	 * address of the whole module as they were in version 2. See
+	 * DRCOV_VERSION_SEGMENT_OFFSETS in DynamoRIO's ext/drcovlib/drcovlib.h.
+	 */
+	protected static final int SEGMENT_OFFSET_VERSION = 3;
+
 	protected final Pattern HEADER_REGEX = Pattern.compile("^DRCOV VERSION: (?<version>[23])$");
 	protected final Pattern FLAVOUR_REGEX = Pattern.compile("^DRCOV FLAVOR: (?<flavour>.*)$");
 	protected final Pattern TABLE_REGEX = Pattern
@@ -158,13 +166,21 @@ public class DynamoRioFile implements IEventListener {
 		var blockReader = new BlockReader(monitor, reader);
 		blockReader.addListener(this);
 
-		var moduleLimits = getModuleLimits();
+		var containingStarts = getContainingStarts();
+		var moduleLimits = getModuleLimits(containingStarts);
+		var segmentOffsets = getSegmentOffsets(containingStarts);
 
 		for (var i = 0; i < blockCount; i++) {
 			monitor.checkCancelled();
 			monitor.setMessage(String.format("Reading block: %d", i));
-			var block = blockReader.read();
-			long moduleLimit = moduleLimits.get(block.getModule());
+			var block = rebaseBlock(blockReader.read(), segmentOffsets);
+
+			var moduleLimit = moduleLimits.get(block.getModule());
+			if (moduleLimit == null) {
+				throw new IOException(
+						String.format("Block: %d references unknown module: %d", i, block.getModule()));
+			}
+
 			if (block.getEnd() > moduleLimit) {
 				addMessage(String.format("Block offset: %x greater than module size: %d", block.getEnd(), moduleLimit));
 			}
@@ -190,14 +206,73 @@ public class DynamoRioFile implements IEventListener {
 		return blocks;
 	}
 
-	protected HashMap<Integer, Long> getModuleLimits() {
+	/**
+	 * Maps each module id to the base address of the module which contains it. A
+	 * module which is split into multiple segments has a module table entry, and
+	 * hence an id, per segment, each of which shares the containing_id of the first.
+	 */
+	protected HashMap<Integer, Long> getContainingStarts() {
+		var starts = new HashMap<Integer, Long>();
+		modules.forEach(m -> starts.put(m.getId(), m.getStart()));
+
+		var containingStarts = new HashMap<Integer, Long>();
+		for (ModuleEntry module : modules) {
+			var containingStart = starts.get(module.getContainingId());
+			if (containingStart == null) {
+				addErrorMessage(String.format("Module: %d has unknown containing_id: %d, assuming it is not a segment",
+						module.getId(), module.getContainingId()));
+				containingStart = module.getStart();
+			}
+			containingStarts.put(module.getId(), containingStart);
+		}
+		return containingStarts;
+	}
+
+	/**
+	 * Maps each module id to the offset of its segment from the base address of the
+	 * containing module, which is zero for a module which has not been split into
+	 * segments. Note that the offset column of the module table cannot be used for
+	 * this, since for ELF modules it holds the offset of the segment within the file
+	 * rather than within the loaded module.
+	 */
+	protected HashMap<Integer, Long> getSegmentOffsets(HashMap<Integer, Long> containingStarts) {
+		var segmentOffsets = new HashMap<Integer, Long>();
+		for (ModuleEntry module : modules) {
+			segmentOffsets.put(module.getId(), module.getStart() - containingStarts.get(module.getId()));
+		}
+		return segmentOffsets;
+	}
+
+	/**
+	 * Converts a block offset which is relative to the start of its segment into one
+	 * relative to the base address of the containing module, so that blocks read
+	 * from either version of the file format can be treated alike.
+	 */
+	protected BlockEntry rebaseBlock(BlockEntry block, HashMap<Integer, Long> segmentOffsets) {
+		if (fileVersion < SEGMENT_OFFSET_VERSION) {
+			return block;
+		}
+
+		var segmentOffset = segmentOffsets.get(block.getModule());
+		if (segmentOffset == null || segmentOffset == 0) {
+			return block;
+		}
+
+		return new BlockEntry(block.getStart() + segmentOffset, block.getSize(), block.getModule());
+	}
+
+	/**
+	 * Maps each module id to the size of the module which contains it, for
+	 * comparison against block offsets which have been rebased to that module.
+	 */
+	protected HashMap<Integer, Long> getModuleLimits(HashMap<Integer, Long> containingStarts) {
 		var moduleLimits = new HashMap<Integer, Long>();
 		for (ModuleEntry module : modules) {
 			var containing_id = module.getContainingId();
 			var selectedModules = modules.stream().filter(m -> m.getContainingId() == containing_id);
 			Stream<Long> limits = selectedModules.map(ModuleEntry::getEnd);
 			var maxLimit = limits.max(Long::compare).get();
-			moduleLimits.put(module.getId(), maxLimit);
+			moduleLimits.put(module.getId(), maxLimit - containingStarts.get(module.getId()));
 		}
 		return moduleLimits;
 	}
