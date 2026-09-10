@@ -60,13 +60,17 @@ public class ModuleReader {
 		protected Pattern regex;
 		protected boolean hasContainingId;
 		protected boolean hasChecksumTimeStamp;
+		protected boolean hasOffset;
+		protected boolean hasPreferredBase;
 
-		public ModuleTriplet(int version, String header, Pattern regex, boolean hasContainingId,
+		public ModuleTriplet(int version, String header, Pattern regex, boolean hasContainingId, boolean hasOffset, boolean hasPreferredBase,
 				boolean hasChecksumTimeStamp) {
 			this.version = version;
 			this.header = header;
 			this.regex = regex;
 			this.hasContainingId = hasContainingId;
+			this.hasOffset = hasOffset;
+			this.hasPreferredBase = hasPreferredBase;
 			this.hasChecksumTimeStamp = hasChecksumTimeStamp;
 		}
 	}
@@ -76,14 +80,14 @@ public class ModuleReader {
 		this.monitor = monitor;
 		this.reader = reader;
 
-		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_WIN, COLUMN_2_HDR_WIN_FMT, false, true));
-		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_LINUX, COLUMN_2_HDR_LINUX_FMT, false, false));
-		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_WIN, COLUMN_3_HDR_WIN_FMT, true, true));
-		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_LINUX, COLUMN_3_HDR_LINUX_FMT, true, false));
-		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_WIN, COLUMN_4_HDR_WIN_FMT, true, true));
-		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_LINUX, COLUMN_4_HDR_LINUX_FMT, true, false));
-		formats.add(new ModuleTriplet(5, COLUMN_5_HDR_WIN, COLUMN_5_HDR_WIN_FMT, true, true));
-		formats.add(new ModuleTriplet(5, COLUMN_5_HDR_LINUX, COLUMN_5_HDR_LINUX_FMT, true, false));
+		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_WIN, COLUMN_2_HDR_WIN_FMT, false, false, false, true));
+		formats.add(new ModuleTriplet(2, COLUMN_2_HDR_LINUX, COLUMN_2_HDR_LINUX_FMT, false, false, false, false));
+		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_WIN, COLUMN_3_HDR_WIN_FMT, true, false, false, true));
+		formats.add(new ModuleTriplet(3, COLUMN_3_HDR_LINUX, COLUMN_3_HDR_LINUX_FMT, true, false, false, false));
+		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_WIN, COLUMN_4_HDR_WIN_FMT, true, true, false, true));
+		formats.add(new ModuleTriplet(4, COLUMN_4_HDR_LINUX, COLUMN_4_HDR_LINUX_FMT, true, true, false, false));
+		formats.add(new ModuleTriplet(5, COLUMN_5_HDR_WIN, COLUMN_5_HDR_WIN_FMT, true, true, true, true));
+		formats.add(new ModuleTriplet(5, COLUMN_5_HDR_LINUX, COLUMN_5_HDR_LINUX_FMT, true, true, true, false));
 
 		readColumnHeader();
 
@@ -146,6 +150,30 @@ public class ModuleReader {
 		var entryString = moduleMatcher.group("entry");
 		long entry = parseNumber(entryString, s -> Long.parseLong(s, 16),
 				String.format("Invalid entry: %s", entryString));
+		
+		long offset = 0;
+
+		if (selectedModuleTriplet.hasOffset) {
+		    var offsetString = moduleMatcher.group("offset");
+
+		    offset = parseNumber(
+		        offsetString,
+		        s -> Long.parseUnsignedLong(s, 16),
+		        String.format("Invalid offset: %s", offsetString)
+		    );
+		}
+
+		long preferredBase = 0;
+
+		if (selectedModuleTriplet.hasPreferredBase) {
+		    var preferredBaseString = moduleMatcher.group("preferredbase");
+
+		    preferredBase = parseNumber(
+		        preferredBaseString,
+		        s -> Long.parseUnsignedLong(s, 16),
+		        String.format("Invalid preferred base: %s", preferredBaseString)
+		    );
+		}
 
 		String checksum = null;
 		var timeStamp = 0L;
@@ -165,7 +193,7 @@ public class ModuleReader {
 		}
 
 
-		var module = new ModuleEntry(id, containingId, start, end, entry, checksum, timeStamp, pathString);
+		var module = new ModuleEntry(id, containingId, start, end, entry, offset, preferredBase, checksum, timeStamp, pathString);
 		addMessage(String.format("Read Module: %s", module));
 		monitor.checkCancelled();
 		return module;

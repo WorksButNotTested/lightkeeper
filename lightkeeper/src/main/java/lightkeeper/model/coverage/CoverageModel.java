@@ -123,12 +123,24 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, AddressS
 				Set<Integer> ids = this.getSelectedModuleIds(selectedModules);
 
 				var baseAddress = api.getCurrentProgram().getImageBase();
+				var modulesById = new HashMap<Integer, ModuleEntry>();
+
+				for (ModuleEntry module : file.getModules()) {
+					modulesById.put(module.getId(),module);
+				}
+
 				for (BlockEntry block : file.getBlocks()) {
 					monitor.checkCancelled();
+					var module = modulesById.get(block.getModule());
+					
+					if (module == null){
+						continue;
+					}
+
 					if (!ids.contains(block.getModule())) {
 						continue;
 					}
-					var start = baseAddress.add(block.getStart());
+					var start = baseAddress.add(module.getOffset()).add(block.getStart());
 					AddressRange range = new AddressRangeImpl(start, block.getSize());
 					fileRanges.add(range);
 				}

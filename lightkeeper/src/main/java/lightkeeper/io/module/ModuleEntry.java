@@ -9,14 +9,18 @@ public class ModuleEntry {
 	protected String checksum;
 	protected long timeStamp;
 	protected String path;
+	protected long offset;
+	protected long preferredBase;
 
-	public ModuleEntry(int id, int containingId, long start, long end, long entry, String checksum, long timeStamp,
+	public ModuleEntry(int id, int containingId, long start, long end, long entry, long offset, long preferredBase, String checksum, long timeStamp,
 			String path) {
 		this.id = id;
 		this.containingId = containingId;
 		this.start = start;
 		this.end = end;
 		this.entry = entry;
+		this.offset = offset;
+		this.preferredBase = preferredBase;
 		this.checksum = checksum;
 		this.timeStamp = timeStamp;
 		this.path = path;
@@ -24,8 +28,8 @@ public class ModuleEntry {
 
 	@Override
 	public String toString() {
-		var str = String.format("id: %d, start: %x, end: %x, entry: %x, checksum: %s, timestamp: %x, path: %s", id,
-				start, end, entry, checksum, timeStamp, path);
+		var str = String.format("id: %d, containintID: %d start: %x, end: %x, entry: %x, preferredBase: %x,  checksum: %s, timestamp: %x, path: %s", id,
+				containingId, start, end, entry, preferredBase, checksum, timeStamp, path);
 		return str;
 	}
 
@@ -51,5 +55,13 @@ public class ModuleEntry {
 
 	public String getPath() {
 		return path;
+	}
+	
+	public long getOffset() {
+    return offset;
+	}
+
+	public long getPreferredBase() {
+    return preferredBase;
 	}
 }
