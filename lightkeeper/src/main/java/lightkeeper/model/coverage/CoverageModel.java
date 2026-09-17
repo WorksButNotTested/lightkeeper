@@ -140,7 +140,7 @@ public class CoverageModel extends AbstractCoverageModel<DynamoRioFile, AddressS
 					if (!ids.contains(block.getModule())) {
 						continue;
 					}
-					var start = baseAddress.add(module.getOffset()).add(block.getStart());
+					var start = baseAddress.add(module.getPreferredBase()).add(block.getStart());
 					AddressRange range = new AddressRangeImpl(start, block.getSize());
 					fileRanges.add(range);
 				}
