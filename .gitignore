@@ -6,3 +6,4 @@ lightkeeper/bin/
 lightkeeper/build/
 lightkeeper/dist/
 lightkeeper/dragondance.log
+.gradle/
