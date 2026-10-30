@@ -1,71 +1,94 @@
+
 name: Ghidra Extension Publish
 
 env:
-  ghidra-url: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.1.3_build/ghidra_12.1.3_PUBLIC_20260817.zip
-  ghidra-zip-filename: ghidra_12.1.3_PUBLIC_20260817.zip
-  ghidra-directory: ghidra_12.1.3_PUBLIC
+  GHIDRA_URL: https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_12.2_build/ghidra_12.2_PUBLIC_20261016.zip
+  GHIDRA_ZIP: ghidra_12.2_PUBLIC_20261016.zip
+  GHIDRA_DIR: ghidra_12.2_PUBLIC
 
 on:
   push:
     tags:
       - '*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-        cache: 'gradle'
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-    - name: Get the version
-      id: get_version
-      run: |
-        echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-        echo ::set-output name=CHANGE_LOG::$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
 
-    - name: Download Ghidra release
-      uses: carlosperate/download-file-action@v1.0.3
-      id: download-ghidra
-      with:
-        file-url: ${{ env.ghidra-url }}
-        file-name: ${{ env.ghidra-zip-filename }}
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.1.0'
+          cache-provider: basic
 
-    - name: Build
-      shell: bash
-      run: |
-        unzip -qq ${{ steps.download-ghidra.outputs.file-path }} -d /opt
-        rm -v ${{ env.ghidra-zip-filename }}
-        cd lightkeeper
-        java --version
-        gradle -PGHIDRA_INSTALL_DIR=/opt/${{ env.ghidra-directory }}
-        mv -v dist/*.zip ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+      - name: Get the version and changelog
+        id: get_version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          Change log:
-          ${{ steps.get_version.outputs.CHANGE_LOG }}
-        draft: false
-        prerelease: false
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 "${GITHUB_SHA}^" 2>/dev/null || true)"
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
-        asset_name: lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
-        asset_content_type: application/zip
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            CHANGE_LOG="$(git log --pretty=format:'* %s' "${PREVIOUS_TAG}..${GITHUB_SHA}")"
+          else
+            CHANGE_LOG="$(git log --pretty=format:'* %s' "${GITHUB_SHA}")"
+          fi
+
+          {
+            echo "VERSION=$VERSION"
+            echo "CHANGE_LOG<<EOF"
+            printf '%s\n' "$CHANGE_LOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download Ghidra
+        shell: bash
+        run: |
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$RUNNER_TEMP/$GHIDRA_ZIP" \
+            "$GHIDRA_URL"
+
+      - name: Build
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/ghidra"
+
+          unzip -qq "$RUNNER_TEMP/$GHIDRA_ZIP" -d "$RUNNER_TEMP/ghidra"
+
+          cd "$GITHUB_WORKSPACE/lightkeeper"
+
+          java --version
+          gradle --version
+
+          gradle "-PGHIDRA_INSTALL_DIR=$RUNNER_TEMP/ghidra/$GHIDRA_DIR"
+
+          mv -v dist/*.zip \
+            "$GITHUB_WORKSPACE/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Change log:
+
+            ${{ steps.get_version.outputs.CHANGE_LOG }}
+          files: ${{ github.workspace }}/lightkeeper-${{ steps.get_version.outputs.VERSION }}.zip
+          fail_on_unmatched_files: true
