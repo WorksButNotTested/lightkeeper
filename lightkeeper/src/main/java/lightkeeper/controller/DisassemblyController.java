@@ -1,17 +1,15 @@
 package lightkeeper.controller;
 
 import java.math.BigInteger;
-import java.util.Collection;
 
 import docking.widgets.fieldpanel.LayoutModel;
 import docking.widgets.fieldpanel.listener.IndexMapper;
 import docking.widgets.fieldpanel.listener.LayoutModelListener;
 import generic.theme.GColor;
-import ghidra.app.decompiler.ClangToken;
 import ghidra.app.decompiler.component.DecompilerPanel;
-import ghidra.app.decompiler.component.DecompilerUtils;
 import ghidra.app.plugin.core.decompile.DecompilerActionContext;
 import ghidra.app.plugin.core.decompile.DecompilerProvider;
+import ghidra.program.model.address.Address;
 import ghidra.util.exception.CancelledException;
 import ghidra.util.task.Task;
 import ghidra.util.task.TaskLauncher;
@@ -58,8 +56,20 @@ public class DisassemblyController implements ICoverageModelListener {
 	}
 
 	public void updateCoverage(TaskMonitor monitor, DecompilerPanel dpanel) {
-		Collection<ClangToken> tokens = DecompilerUtils.getTokens(dpanel.getLayoutController().getRoot(), model.getModelData());
-		tokens.stream().forEach(t -> t.setHighlight(this.color));
+		DecompilerProvider dprov = (DecompilerProvider) plugin.getTool().getComponentProvider("Decompiler");
+		if (dprov != null) {
+			dprov.createHighlighter("LightKeeper Coverage", token -> {
+				Address minAddress = token.getMinAddress();
+				if (minAddress == null) {
+					return null;
+				}
+				Address maxAddress = token.getMaxAddress();
+				if (maxAddress == null) {
+					maxAddress = minAddress;
+				}
+				return model.getModelData().intersects(minAddress, maxAddress) ? color : null;
+			}).applyHighlights();
+		}
 	}
 
 	public void updateCoverageTask(DecompilerPanel dpanel) {
